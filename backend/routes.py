@@ -1,70 +1,56 @@
-"""
-API ROUTES — owned by backend (you).
-
-This file only does HTTP plumbing: validate input, call llm_service,
-shape the response, handle errors gracefully. It never talks to
-DeepSeek directly — that's llm_service.py's job (Person C).
-"""
-
 from fastapi import APIRouter, HTTPException
-
+from pydantic import BaseModel
+from typing import List, Dict, Any
 import llm_service
-from schemas import (
-    ExplainRequest, ExplainResponse,
-    QuizRequest, QuizResponse,
-    EvaluateRequest, EvaluateResponse, MissedConcept,
-    ReexplainRequest, ReexplainResponse,
-)
 
 router = APIRouter()
 
+# --- Data Validation Schemas ---
+class ExplainRequest(BaseModel):
+    topic: str
+
+class QuizRequest(BaseModel):
+    context_text: str
+
+class EvaluateRequest(BaseModel):
+    quiz_data: List[Dict[str, Any]]
+    user_answers: Dict[str, str]  # Format: {"1": "A", "2": "C"}
+
+class ReexplainRequest(BaseModel):
+    topic: str
+    original_explanation: str
+    weak_points: List[str]
+
+# --- API Endpoints ---
 
 @router.get("/health")
 def health_check():
-    return {"status": "ok"}
+    return {"status": "healthy", "environment": "sandbox_active"}
 
+@router.post("/explain")
+def explain_topic(data: ExplainRequest):
+    ai_response = llm_service.get_explanation(data.topic)
+    if "error" in ai_response:
+        raise HTTPException(status_code=502, detail=ai_response["error"])
+    return ai_response
 
-@router.post("/explain", response_model=ExplainResponse)
-def explain(req: ExplainRequest):
-    try:
-        result = llm_service.generate_explanation(req.content, req.weak_points)
-        return ExplainResponse(**result)
-    except Exception:
-        raise HTTPException(status_code=502, detail="Could not generate explanation. Please try again.")
+@router.post("/quiz")
+def generate_quiz(data: QuizRequest):
+    ai_response = llm_service.get_quiz(data.context_text)
+    if "error" in ai_response:
+        raise HTTPException(status_code=502, detail=ai_response["error"])
+    return ai_response
 
+@router.post("/evaluate")
+def evaluate_quiz(data: EvaluateRequest):
+    ai_response = llm_service.evaluate_answers(data.quiz_data, data.user_answers)
+    if "error" in ai_response:
+        raise HTTPException(status_code=502, detail=ai_response["error"])
+    return ai_response
 
-@router.post("/quiz", response_model=QuizResponse)
-def quiz(req: QuizRequest):
-    try:
-        result = llm_service.generate_quiz(req.content, req.difficulty, req.num_questions)
-        return QuizResponse(**result)
-    except Exception:
-        raise HTTPException(status_code=502, detail="Could not generate quiz. Please try again.")
-
-
-@router.post("/evaluate", response_model=EvaluateResponse)
-def evaluate(req: EvaluateRequest):
-    # This logic is pure Python, no LLM call needed — deterministic scoring.
-    correct_map = {q.question: q.answer for q in req.correct_answers}
-    missed = []
-    score = 0
-
-    for ans in req.answers:
-        correct_answer = correct_map.get(ans.question)
-        if correct_answer == ans.selected:
-            score += 1
-        else:
-            missed.append(MissedConcept(concept_tag=ans.concept_tag, question=ans.question))
-
-    return EvaluateResponse(score=score, total=len(req.answers), missed_concepts=missed)
-
-
-@router.post("/reexplain", response_model=ReexplainResponse)
-def reexplain(req: ReexplainRequest):
-    try:
-        result = llm_service.generate_reexplanation(
-            req.concept_tag, req.original_content, req.previous_explanation
-        )
-        return ReexplainResponse(**result)
-    except Exception:
-        raise HTTPException(status_code=502, detail="Could not re-explain. Please try again.")
+@router.post("/reexplain")
+def reexplain_topic(data: ReexplainRequest):
+    ai_response = llm_service.get_reexplanation(data.topic, data.original_explanation, data.weak_points)
+    if "error" in ai_response:
+        raise HTTPException(status_code=502, detail=ai_response["error"])
+    return ai_response
