@@ -1,0 +1,11 @@
+# Ignore the local environment config (holds your API key)
+.env
+
+# Ignore your Python virtual environment (saves massive upload space)
+hack_env/
+venv/
+ENV/
+
+# Ignore Python cache files
+__pycache__/
+*.pyc

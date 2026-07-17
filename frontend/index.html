@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MindLoop</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main id="app">
+    <h1>MindLoop</h1>
+    <p class="subtitle">Paste a topic. Get explained. Get quizzed. Get better.</p>
+
+    <section id="input-section">
+      <textarea id="content-input" placeholder="Paste your notes or a topic here..."></textarea>
+      <button id="explain-btn">Explain this</button>
+    </section>
+
+    <section id="explanation-section" class="hidden">
+      <h2>Explanation</h2>
+      <p id="explanation-text"></p>
+      <button id="quiz-btn">Quiz me</button>
+    </section>
+
+    <section id="quiz-section" class="hidden">
+      <h2>Quiz</h2>
+      <div id="quiz-questions"></div>
+      <button id="submit-quiz-btn">Submit answers</button>
+    </section>
+
+    <section id="results-section" class="hidden">
+      <h2>Results</h2>
+      <p id="score-text"></p>
+      <div id="reexplain-area"></div>
+    </section>
+  </main>
+
+  <script src="mock-data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
