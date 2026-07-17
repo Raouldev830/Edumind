@@ -4,8 +4,15 @@ from typing import List, Dict, Any
 import llm_service
 import pypdf
 import io
+from PIL import Image
+import easyocr
 
 router = APIRouter()
+
+# Initialize the OCR reader once globally when the server starts (English language)
+# Note: The very first time you hit the /upload-image endpoint, it will take a moment 
+# to automatically download its lightweight AI model weights.
+reader = easyocr.Reader(['en'])
 
 # --- Data Validation Schemas ---
 class ExplainRequest(BaseModel):
@@ -69,10 +76,10 @@ async def upload_material(file: UploadFile = File(...)):
         pdf_file = io.BytesIO(contents)
         
         # 3. Initialize the PDF reader and extract text page by page
-        reader = pypdf.PdfReader(pdf_file)
+        reader_pdf = pypdf.PdfReader(pdf_file)
         extracted_text = ""
         
-        for page in reader.pages:
+        for page in reader_pdf.pages:
             text = page.extract_text()
             if text:
                 extracted_text += text + "\n"
@@ -91,3 +98,36 @@ async def upload_material(file: UploadFile = File(...)):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to process PDF document: {str(e)}")
+
+@router.post("/upload-image")
+async def upload_image(file: UploadFile = File(...)):
+    # 1. Validate it's actually an image
+    if not file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
+        raise HTTPException(status_code=400, detail="Invalid file type. Only PNG, JPG, and WEBP images are supported.")
+    
+    try:
+        # 2. Read the image bytes into memory
+        contents = await file.read()
+        image = Image.open(io.BytesIO(contents))
+        
+        # 3. Convert PIL image to bytes for EasyOCR to process
+        img_byte_arr = io.BytesIO()
+        image.save(img_byte_arr, format=image.format)
+        img_bytes = img_byte_arr.getvalue()
+        
+        # 4. Run the OCR engine to extract text chunks
+        results = reader.readtext(img_bytes, detail=0)  # detail=0 returns just the pure text strings
+        extracted_text = " ".join(results)
+        
+        if not extracted_text.strip():
+            raise HTTPException(
+                status_code=422, 
+                detail="Could not detect any clear text in this image. Make sure it's well-lit and legible."
+            )
+            
+        return {"filename": file.filename, "extracted_text": extracted_text}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to process image: {str(e)}")
