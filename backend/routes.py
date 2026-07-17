@@ -1,7 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from typing import List, Dict, Any
 import llm_service
+import pypdf
+import io
 
 router = APIRouter()
 
@@ -54,3 +56,38 @@ def reexplain_topic(data: ReexplainRequest):
     if "error" in ai_response:
         raise HTTPException(status_code=502, detail=ai_response["error"])
     return ai_response
+
+@router.post("/upload-material")
+async def upload_material(file: UploadFile = File(...)):
+    # 1. Block non-PDF files early
+    if not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="Invalid file type. Only PDF documents are supported.")
+    
+    try:
+        # 2. Read file contents into memory safely
+        contents = await file.read()
+        pdf_file = io.BytesIO(contents)
+        
+        # 3. Initialize the PDF reader and extract text page by page
+        reader = pypdf.PdfReader(pdf_file)
+        extracted_text = ""
+        
+        for page in reader.pages:
+            text = page.extract_text()
+            if text:
+                extracted_text += text + "\n"
+        
+        # 4. Check if extraction succeeded (makes sure it's not a blank file or pure image scan)
+        if not extracted_text.strip():
+            raise HTTPException(
+                status_code=422, 
+                detail="Could not read text from this PDF. It might be scanned or empty."
+            )
+            
+        return {"filename": file.filename, "extracted_text": extracted_text}
+        
+    except HTTPException:
+        # Re-raise explicit HTTP exceptions we generated above
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to process PDF document: {str(e)}")
