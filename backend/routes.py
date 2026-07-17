@@ -6,17 +6,17 @@ import pypdf
 import io
 from PIL import Image
 import easyocr
+import database  # Gamification database core
 
 router = APIRouter()
 
 # Initialize the OCR reader once globally when the server starts (English language)
-# Note: The very first time you hit the /upload-image endpoint, it will take a moment 
-# to automatically download its lightweight AI model weights.
 reader = easyocr.Reader(['en'])
 
 # --- Data Validation Schemas ---
 class ExplainRequest(BaseModel):
     topic: str
+    username: str = "StudentPro"  # Default profile for testing gamification
 
 class QuizRequest(BaseModel):
     context_text: str
@@ -24,6 +24,8 @@ class QuizRequest(BaseModel):
 class EvaluateRequest(BaseModel):
     quiz_data: List[Dict[str, Any]]
     user_answers: Dict[str, str]  # Format: {"1": "A", "2": "C"}
+    topic: str = "General Study"  # Tracks topic history in the dashboard
+    username: str = "StudentPro"
 
 class ReexplainRequest(BaseModel):
     topic: str
@@ -36,11 +38,23 @@ class ReexplainRequest(BaseModel):
 def health_check():
     return {"status": "healthy", "environment": "sandbox_active"}
 
+@router.get("/profile/{username}")
+def get_student_profile(username: str):
+    """Fetches real-time student gamification profile (XP, Level, Streak)."""
+    profile = database.get_user_stats(username)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Student profile not found")
+    return profile
+
 @router.post("/explain")
 def explain_topic(data: ExplainRequest):
     ai_response = llm_service.get_explanation(data.topic)
     if "error" in ai_response:
         raise HTTPException(status_code=502, detail=ai_response["error"])
+    
+    # Award base XP for processing and reading an explanation
+    game_rewards = database.update_student_progress(data.username, "read_explanation")
+    ai_response["gamification"] = game_rewards
     return ai_response
 
 @router.post("/quiz")
@@ -55,6 +69,20 @@ def evaluate_quiz(data: EvaluateRequest):
     ai_response = llm_service.evaluate_answers(data.quiz_data, data.user_answers)
     if "error" in ai_response:
         raise HTTPException(status_code=502, detail=ai_response["error"])
+    
+    # Extract calculated performance scores from the AI evaluation engine
+    score = ai_response.get("score", 0)
+    total = ai_response.get("total_questions", len(data.user_answers))
+    
+    # Award performance-based XP, manage active streaks, and update the dashboard history
+    game_rewards = database.update_student_progress(
+        username=data.username,
+        activity_type="complete_quiz",
+        quiz_score=score,
+        quiz_total=total,
+        topic=data.topic
+    )
+    ai_response["gamification"] = game_rewards
     return ai_response
 
 @router.post("/reexplain")
@@ -66,16 +94,13 @@ def reexplain_topic(data: ReexplainRequest):
 
 @router.post("/upload-material")
 async def upload_material(file: UploadFile = File(...)):
-    # 1. Block non-PDF files early
     if not file.filename.lower().endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Invalid file type. Only PDF documents are supported.")
     
     try:
-        # 2. Read file contents into memory safely
         contents = await file.read()
         pdf_file = io.BytesIO(contents)
         
-        # 3. Initialize the PDF reader and extract text page by page
         reader_pdf = pypdf.PdfReader(pdf_file)
         extracted_text = ""
         
@@ -84,7 +109,6 @@ async def upload_material(file: UploadFile = File(...)):
             if text:
                 extracted_text += text + "\n"
         
-        # 4. Check if extraction succeeded (makes sure it's not a blank file or pure image scan)
         if not extracted_text.strip():
             raise HTTPException(
                 status_code=422, 
@@ -94,29 +118,24 @@ async def upload_material(file: UploadFile = File(...)):
         return {"filename": file.filename, "extracted_text": extracted_text}
         
     except HTTPException:
-        # Re-raise explicit HTTP exceptions we generated above
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to process PDF document: {str(e)}")
 
 @router.post("/upload-image")
 async def upload_image(file: UploadFile = File(...)):
-    # 1. Validate it's actually an image
     if not file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
         raise HTTPException(status_code=400, detail="Invalid file type. Only PNG, JPG, and WEBP images are supported.")
     
     try:
-        # 2. Read the image bytes into memory
         contents = await file.read()
         image = Image.open(io.BytesIO(contents))
         
-        # 3. Convert PIL image to bytes for EasyOCR to process
         img_byte_arr = io.BytesIO()
         image.save(img_byte_arr, format=image.format)
         img_bytes = img_byte_arr.getvalue()
         
-        # 4. Run the OCR engine to extract text chunks
-        results = reader.readtext(img_bytes, detail=0)  # detail=0 returns just the pure text strings
+        results = reader.readtext(img_bytes, detail=0)
         extracted_text = " ".join(results)
         
         if not extracted_text.strip():
