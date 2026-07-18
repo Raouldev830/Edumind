@@ -1,41 +1,225 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MindLoop</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindLoop AI Tutor Platform</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <main id="app">
-    <h1>MindLoop</h1>
-    <p class="subtitle">Paste a topic. Get explained. Get quizzed. Get better.</p>
 
-    <section id="input-section">
-      <textarea id="content-input" placeholder="Paste your notes or a topic here..."></textarea>
-      <button id="explain-btn">Explain this</button>
-    </section>
+    <div class="app-layout">
+        <!-- Sidebar Navigation Framework -->
+        <aside class="app-sidebar">
+            <div class="sidebar-brand">
+                <span class="brand-icon">⚡</span>
+                <span class="brand-name">MindLoop</span>
+            </div>
 
-    <section id="explanation-section" class="hidden">
-      <h2>Explanation</h2>
-      <p id="explanation-text"></p>
-      <button id="quiz-btn">Quiz me</button>
-    </section>
+            <nav class="sidebar-menu">
+                <a href="#" class="menu-item active" data-target="dashboard">
+                    <span class="menu-icon">📁</span> Dashboard
+                </a>
+                <a href="#" class="menu-item" data-target="practice">
+                    <span class="menu-icon">🧬</span> AI Practice
+                </a>
+                <a href="#" class="menu-item" data-target="schedule">
+                    <span class="menu-icon">📅</span> Schedule DB
+                </a>
+                <a href="#" class="menu-item" data-target="modules">
+                    <span class="menu-icon">📖</span> Core Modules
+                </a>
+                <a href="#" class="menu-item" data-target="notifications">
+                    <span class="menu-icon">🔔</span> Notifications
+                </a>
+                <a href="#" class="menu-item" data-target="achievements">
+                    <span class="menu-icon">🏆</span> Achievements
+                </a>
+                <a href="#" class="menu-item" data-target="settings">
+                    <span class="menu-icon">⚙️</span> Settings
+                </a>
+            </nav>
 
-    <section id="quiz-section" class="hidden">
-      <h2>Quiz</h2>
-      <div id="quiz-questions"></div>
-      <button id="submit-quiz-btn">Submit answers</button>
-    </section>
+            <!-- Bottom Gamification Status Card -->
+            <div class="sidebar-promo-card">
+                <div class="promo-avatar">🚀</div>
+                <h4 class="promo-title">Scholar Status</h4>
+                <p class="promo-subtitle">Level <span id="ui-level">1</span> Active Track</p>
+                <div class="promo-progress-container">
+                    <div class="progress-bar" id="ui-xp-bar"></div>
+                </div>
+                <span class="promo-xp-text" id="ui-xp-text">0 / 200 XP</span>
+            </div>
+        </aside>
 
-    <section id="results-section" class="hidden">
-      <h2>Results</h2>
-      <p id="score-text"></p>
-      <div id="reexplain-area"></div>
-    </section>
-  </main>
+        <!-- Main Workspace Area -->
+        <main class="app-main">
+            <!-- Top Search Header Bar -->
+            <header class="main-header">
+                <div class="search-wrapper">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="topic-input" placeholder="Type concept parameters here (e.g., explain the water cycle)...">
+                    <button class="header-action-btn" id="generate-btn" onclick="triggerExplanation()">Generate Insights</button>
+                </div>
+                
+                <div class="header-user-status">
+                    <div class="header-stat-pill">
+                        <span id="ui-streak">🔥 1 Day Streak</span>
+                    </div>
+                    <div class="mock-control-pill">
+                        <label class="switch">
+                            <!-- Removed 'checked' attribute here -->
+                            <input type="checkbox" id="debug-toggle">
+                            <span class="slider"></span>
+                        </label>
+                        <span class="mock-text">Mock Mode</span>
+                    </div>
+                    <div class="user-avatar-frame">
+                        <span class="user-initials" id="ui-username">SP</span>
+                    </div>
+                </div>
+            </header>
 
-  <script src="mock-data.js"></script>
-  <script src="script.js"></script>
+            <!-- Content Panel Router Node -->
+            <div id="view-dashboard" class="router-view active-view">
+                
+                <!-- Hero Section -->
+                <section class="hero-showcase-container">
+                    <div class="hero-welcome-banner">
+                        <p class="welcome-tagline">Salut, Student!</p>
+                        <h2 class="welcome-title">You are processing core academic structures this week.</h2>
+                        <div class="upload-trigger-zone" onclick="document.getElementById('file-input').click()">
+                            <span id="attachment-label">Ingest Reference PDF/Notes ➔</span>
+                            <input type="file" id="file-input" accept=".pdf, .png, .jpg, .jpeg, .webp" style="display:none;">
+                        </div>
+                    </div>
+                    
+                    <div class="hero-modules-scroll">
+                        <div class="mini-module-card">
+                            <span class="mod-num">01</span>
+                            <h4 class="mod-name">Computer Science</h4>
+                            <div class="mod-deco-lines"></div>
+                        </div>
+                        <div class="mini-module-card accented">
+                            <span class="mod-num">02</span>
+                            <h4 class="mod-name">Physics & Quantum</h4>
+                            <div class="mod-deco-lines"></div>
+                        </div>
+                        <div class="mini-module-card">
+                            <span class="mod-num">03</span>
+                            <h4 class="mod-name">Robotics Matrix</h4>
+                            <div class="mod-deco-lines"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Lower Layout Grid Split -->
+                <div class="workspace-content-grid">
+                    <div class="workspace-primary-col">
+                        <div class="content-card">
+                            <div class="card-inline-header">
+                                <h3 class="card-heading text-dark-title">AI Processing Engine Workspace</h3>
+                                <span class="task-percentage-badge">Active Engine</span>
+                            </div>
+                            
+                            <div class="ai-live-output-area">
+                                <div id="explanation-card" style="display: none; margin-bottom: 24px;">
+                                    <h4 class="synthesis-title-blue">Concept Synthesis</h4>
+                                    <p class="explanation-text-black" id="explanation-box"></p>
+                                    <button class="action-trigger-btn" onclick="triggerQuizGeneration()">Generate Knowledge Check</button>
+                                </div>
+
+                                <div id="quiz-card" style="display: none;">
+                                    <h4 class="synthesis-title-blue">Knowledge Check</h4>
+                                    <form id="quiz-form" class="quiz-styled-form"></form>
+                                    <button class="action-trigger-btn primary-intent" onclick="triggerEvaluation()">Submit Answers</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="workspace-secondary-col">
+                        <!-- Timetable Container -->
+                        <div class="content-card tight-padding">
+                            <h3 class="card-heading text-dark-title">📅 Class & Study Timetable DB</h3>
+                            <div class="notion-data-view" id="timetable-container"></div>
+                            
+                            <div class="inline-input-matrix">
+                                <select id="schedule-day">
+                                    <option value="Mon">Mon</option>
+                                    <option value="Tue">Tue</option>
+                                    <option value="Wed">Wed</option>
+                                    <option value="Thu">Thu</option>
+                                    <option value="Fri">Fri</option>
+                                </select>
+                                <select id="schedule-tag">
+                                    <option value="cs">CS</option>
+                                    <option value="physics">Phys</option>
+                                    <option value="electronics">Elec</option>
+                                    <option value="robotics">Robo</option>
+                                </select>
+                                <input type="text" id="schedule-subject" placeholder="Module focus...">
+                                <button class="square-add-btn" onclick="addScheduleSlot()">＋</button>
+                            </div>
+                        </div>
+
+                        <!-- Milestones Container -->
+                        <div class="content-card tight-padding">
+                            <h3 class="card-heading text-dark-title">🚀 Target Career Milestones</h3>
+                            <div class="notion-data-view" id="assignment-container"></div>
+                            <button class="action-trigger-btn" onclick="generateSmartAssignment()">⚡ Auto-Suggest Career Alignment Task</button>
+                        </div>
+
+                        <!-- Heatmap Container -->
+                        <div class="content-card tight-padding">
+                            <div class="heatmap-header-wrapper">
+                                <h3 class="card-heading text-dark-title">📊 System Activity Grid</h3>
+                                <div class="heatmap-legend-indicator">
+                                    <div class="cube lvl-0"></div>
+                                    <div class="cube lvl-1"></div>
+                                    <div class="cube lvl-2"></div>
+                                    <div class="cube lvl-3"></div>
+                                </div>
+                            </div>
+                            <div class="heatmap-axis-wrapper">
+                                <div class="heatmap-day-labels">
+                                    <span>Mon</span>
+                                    <span>Wed</span>
+                                    <span>Fri</span>
+                                </div>
+                                <div class="heatmap-render-axis">
+                                    <div class="heatmap-grid" id="github-heatmap"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fallback Secondary Views -->
+            <div id="view-generic" class="router-view content-card" style="display: none; padding: 40px;">
+                <h2 class="synthesis-title-blue" id="generic-view-title">Dynamic Node Area</h2>
+                <p class="explanation-text-black" style="margin-top: 15px;">This functional subspace is linked dynamically to the main navigation menu structure. Pipeline arrays are active.</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Feedback Toast Panel -->
+    <div class="toast-panel" id="xp-toast">
+        <div class="toast-flex-box">
+            <span class="toast-sparkle">✨</span>
+            <div>
+                <h4 class="toast-head">System Rewards Alert</h4>
+                <p id="toast-msg">+0 XP Added</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="mock-data.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

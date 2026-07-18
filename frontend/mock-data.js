@@ -1,47 +1,58 @@
-/**
- * MOCK DATA — matches the exact JSON shapes defined in backend/schemas.py
- *
- * Person B: build the entire UI against these mock objects first.
- * Once the backend is live, swap the mock functions in script.js for
- * real fetch() calls to http://localhost:8000/... — the JSON shape
- * will not change, so no UI rework should be needed.
- */
-
-const MOCK_EXPLAIN_RESPONSE = {
-  explanation: "Newton's second law states that force equals mass times acceleration (F = ma). " +
-               "This means the more mass an object has, the more force is needed to accelerate it.",
-  level: "intermediate"
-};
-
-const MOCK_QUIZ_RESPONSE = {
-  questions: [
-    {
-      question: "What does F = ma represent?",
-      options: ["Force equals mass times acceleration", "Force equals mass divided by acceleration",
-                "Mass equals force times acceleration", "Acceleration equals force times mass"],
-      answer: "Force equals mass times acceleration",
-      concept_tag: "newtons_second_law_formula"
+// mock-data.js
+window.mockData = {
+    profile: {
+        username: "StudentPro",
+        level: 2,
+        streak: 5,
+        xp: 120,
+        xp_next_level: 200
     },
-    {
-      question: "If mass increases and force stays constant, what happens to acceleration?",
-      options: ["It increases", "It decreases", "It stays the same", "It becomes zero"],
-      answer: "It decreases",
-      concept_tag: "inverse_mass_acceleration_relationship"
+    explanation: {
+        explanation: "Concept Analysis: FastAPI Engine Architecture & Hardware Telemetry Synchronization\n\n" +
+                     "1. ASYNCHRONOUS PIPELINES: FastAPI utilizes Python's ASGI (Asynchronous Server Gateway Interface) standard, leveraging async/await design patterns to handle high-concurrency connections without blocking the main execution thread. This is critical when receiving parallel sensor logs from hardware telemetry arrays.\n\n" +
+                     "2. EMBEDDED SYSTEM COUPLING: When microcontrollers stream data points over WebSockets, the backend pushes data frames straight into an in-memory database layout (like SQLite or Redis). This minimizes write latency and avoids traditional I/O bottlenecks.\n\n" +
+                     "3. QUANTUM STATE SIMULATION CONSIDERATIONS: When scaling mathematical or hardware processing vectors, ensuring data integrity across real-time sockets allows dashboards to maintain deterministic state representations.",
+        gamification: {
+            xp_earned: 50,
+            current_level: 2,
+            current_streak: 5
+        }
+    },
+    quiz: {
+        questions: [
+            {
+                id: 101,
+                question: "Which architectural element enables FastAPI to manage non-blocking concurrent connections?",
+                options: {
+                    A: "Synchronous WSGI thread pooling",
+                    B: "Asynchronous ASGI loop implementation",
+                    C: "Traditional multi-process branching model",
+                    D: "Hardware-level clock cycle interrupts"
+                },
+                correct_answer: "B"
+            },
+            {
+                id: 102,
+                question: "What is the primary technical advantage of utilizing WebSockets over normal standard HTTP requests for hardware drone logging?",
+                options: {
+                    A: "Bidirectional persistent streaming containing significantly lower overhead protocol headers",
+                    B: "Enhanced safety algorithms optimized strictly for hardware data caching",
+                    C: "Forced synchronous execution pathways on embedded microcontrollers",
+                    D: "Automatic database compilation and optimization steps"
+                },
+                correct_answer: "A"
+            },
+            {
+                id: 103,
+                question: "How should a real-time dashboard structure data processing layers to maintain smooth 60 FPS visual state updates?",
+                options: {
+                    A: "Execute heavy array sorting routines on the primary UI thread repeatedly",
+                    B: "Batch coming telemetry arrays into non-blocking frame buffers and use virtual lists",
+                    C: "Force full browser window reloads on every single arriving data packet",
+                    D: "Convert all metric assets into raw video layers dynamically on the fly"
+                },
+                correct_answer: "B"
+            }
+        ]
     }
-  ]
-};
-
-const MOCK_EVALUATE_RESPONSE = {
-  score: 1,
-  total: 2,
-  missed_concepts: [
-    { concept_tag: "inverse_mass_acceleration_relationship",
-      question: "If mass increases and force stays constant, what happens to acceleration?" }
-  ]
-};
-
-const MOCK_REEXPLAIN_RESPONSE = {
-  explanation: "Think of it like pushing a shopping cart. An empty cart (low mass) speeds up fast " +
-               "with a small push. A cart full of groceries (high mass) needs the same push just to " +
-               "get the same result slower — same force, more mass, less acceleration."
 };
