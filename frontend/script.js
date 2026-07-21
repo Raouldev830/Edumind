@@ -76,6 +76,33 @@ function setupMockModeSync() {
     }
 }
 
+function renderRichText(elementOrId, rawText) {
+    const el = typeof elementOrId === 'string' ? document.getElementById(elementOrId) : elementOrId;
+    if (!el || !rawText) return;
+
+    if (window.marked) {
+        el.innerHTML = marked.parse(rawText);
+    } else {
+        el.innerHTML = rawText.replace(/\n/g, '<br>');
+    }
+
+    if (window.renderMathInElement) {
+        try {
+            renderMathInElement(el, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '\\[', right: '\\]', display: true},
+                    {left: '$', right: '$', display: false},
+                    {left: '\\(', right: '\\)', display: false}
+                ],
+                throwOnError: false
+            });
+        } catch (e) {
+            console.warn("KaTeX render error:", e);
+        }
+    }
+}
+
 // ============================================
 // INITIALIZATION
 // ============================================
@@ -187,8 +214,8 @@ async function triggerExplanationFromText(textInput, customTitle = null) {
         const titleEl = document.getElementById('explanation-title');
         if (titleEl) titleEl.innerText = outputData.title || customTitle || textInput.substring(0, 50);
 
-        // Render explanation text
-        document.getElementById('explanation-box').innerText = outputData.explanation;
+        // Render explanation text (Markdown & KaTeX Math)
+        renderRichText('explanation-box', outputData.explanation);
 
         // Render key takeaways
         const takeawaysSection = document.getElementById('key-takeaways-section');
@@ -198,6 +225,9 @@ async function triggerExplanationFromText(textInput, customTitle = null) {
                 .map(t => `<li>${t}</li>`)
                 .join('');
             if (takeawaysSection) takeawaysSection.style.display = 'block';
+            if (window.renderMathInElement) {
+                try { renderMathInElement(takeawaysList, { throwOnError: false }); } catch(e){}
+            }
         } else {
             if (takeawaysSection) takeawaysSection.style.display = 'none';
         }
@@ -314,6 +344,11 @@ async function triggerQuizGeneration() {
 
             return ''; // fallback
         }).join('');
+
+        // Render KaTeX equations inside questions if present
+        if (window.renderMathInElement) {
+            try { renderMathInElement(form, { throwOnError: false }); } catch (e) {}
+        }
 
         // Show quiz, hide others
         switchActivePanel('quiz');
@@ -458,8 +493,13 @@ async function triggerEvaluation() {
             detailedHTML += '</div>';
         }
 
-        // Feedback
-        document.getElementById('eval-feedback').innerHTML = evalData.feedback + detailedHTML;
+        // Feedback (Render markdown summary + detailed breakdown, then run KaTeX math)
+        const evalFeedbackEl = document.getElementById('eval-feedback');
+        const formattedSummary = window.marked ? marked.parse(evalData.feedback || '') : (evalData.feedback || '').replace(/\n/g, '<br>');
+        evalFeedbackEl.innerHTML = formattedSummary + detailedHTML;
+        if (window.renderMathInElement) {
+            try { renderMathInElement(evalFeedbackEl, { throwOnError: false }); } catch (e) {}
+        }
 
         // Show eval results, hide others
         switchActivePanel('eval');
@@ -506,10 +546,10 @@ async function triggerReexplanation(concept) {
             reData = await res.json();
         }
 
-        // Render re-explanation
+        // Render re-explanation (Markdown & KaTeX Math)
         document.getElementById('reexplain-title').innerText = reData.title || `Re-Explanation: ${concept}`;
-        document.getElementById('reexplain-box').innerText = reData.re_explanation;
-        document.getElementById('reexplain-reassurance').innerText = reData.reassurance || '';
+        renderRichText('reexplain-box', reData.re_explanation);
+        renderRichText('reexplain-reassurance', reData.reassurance || '');
 
         // Show reexplain, hide others
         switchActivePanel('reexplain');
