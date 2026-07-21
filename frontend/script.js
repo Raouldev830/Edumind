@@ -719,18 +719,17 @@ function renderProfile(data) {
 
 function startCramTimer() {
     if (cramTimerInterval) return; // Already running
+    const btn = document.getElementById('cram-timer-btn');
+    if (btn) btn.innerText = "⏸ Pause";
+
     cramTimerInterval = setInterval(() => {
         cramTimeRemaining--;
-        updateTimerDisplay();
-
-        const timerContainer = document.getElementById('cram-timer');
-        if (cramTimeRemaining <= 60 && cramTimeRemaining > 0) {
-            timerContainer.classList.add('warning');
-        }
+        updateCountdownDisplay();
 
         if (cramTimeRemaining <= 0) {
-            pauseCramTimer();
-            timerContainer.classList.remove('warning');
+            stopCramTimer();
+            const timerContainer = document.getElementById('cram-timer');
+            if (timerContainer) timerContainer.classList.remove('warning');
             alert("⏰ Cram session complete! Time to review what you've learned.");
         }
     }, 1000);
@@ -741,22 +740,65 @@ function pauseCramTimer() {
         clearInterval(cramTimerInterval);
         cramTimerInterval = null;
     }
+    const btn = document.getElementById('cram-timer-btn');
+    if (btn) btn.innerText = "▶ Start";
+}
+
+function stopCramTimer() {
+    pauseCramTimer();
+}
+
+function toggleCramTimer() {
+    if (cramTimerInterval) {
+        stopCramTimer();
+    } else {
+        startCramTimer();
+    }
 }
 
 function resetCramTimer() {
     pauseCramTimer();
-    cramTimeRemaining = 25 * 60;
-    updateTimerDisplay();
+    const minutesInput = document.getElementById('cram-minutes');
+    const totalMins = minutesInput ? (parseInt(minutesInput.value, 10) || 25) : 25;
+    cramTimeRemaining = totalMins * 60;
+    updateCountdownDisplay();
     const timerContainer = document.getElementById('cram-timer');
     if (timerContainer) timerContainer.classList.remove('warning');
 }
 
 function updateTimerDisplay() {
     const display = document.getElementById('timer-display');
-    if (!display) return;
-    const minutes = Math.floor(cramTimeRemaining / 60);
-    const seconds = cramTimeRemaining % 60;
-    display.innerText = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    const countdownEl = document.getElementById('cram-countdown');
+    const minutes = Math.floor(Math.max(0, cramTimeRemaining) / 60);
+    const seconds = Math.max(0, cramTimeRemaining) % 60;
+    const timeStr = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    if (display) display.innerText = timeStr;
+    if (countdownEl) countdownEl.innerText = timeStr;
+
+    // Minimum DOM hook added to update stroke-dashoffset on circular progress ring:
+    const ringCircle = document.getElementById('cram-ring-circle');
+    const minutesInput = document.getElementById('cram-minutes');
+    const totalSeconds = (minutesInput ? (parseInt(minutesInput.value, 10) || 25) : 25) * 60;
+
+    if (ringCircle && totalSeconds > 0) {
+        const circumference = 2 * Math.PI * 54; // 339.292
+        const progress = Math.max(0, Math.min(1, cramTimeRemaining / totalSeconds));
+        const dashoffset = circumference - (progress * circumference);
+        ringCircle.style.strokeDashoffset = dashoffset;
+    }
+
+    const timerContainer = document.getElementById('cram-timer');
+    if (timerContainer && totalSeconds > 0) {
+        if (cramTimeRemaining <= totalSeconds * 0.1 && cramTimeRemaining > 0) {
+            timerContainer.classList.add('warning');
+        } else {
+            timerContainer.classList.remove('warning');
+        }
+    }
+}
+
+function updateCountdownDisplay() {
+    updateTimerDisplay();
 }
 
 // ============================================

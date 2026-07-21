@@ -141,8 +141,8 @@
                     <button class="header-action-btn" id="generate-btn" onclick="triggerExplanation()">✨ Generate AI Notes</button>
                 </div>
 
-                <!-- Mode & Upload Controls -->
-                <div class="header-controls-center">
+                <!-- Group 1: Action Buttons & Study Mode Wrapper -->
+                <div class="upload-actions-wrapper header-controls-center">
                     <div class="study-mode-toggle">
                         <button class="mode-btn active" id="mode-deep" onclick="setStudyMode('deep')">Deep Mode</button>
                         <button class="mode-btn" id="mode-cram" onclick="setStudyMode('cram')">Cram Mode</button>
@@ -153,8 +153,8 @@
                     <input type="file" id="file-input" accept=".pdf,.png,.jpg,.jpeg,.webp" style="display:none;" onchange="handleFileUpload(event)">
                 </div>
 
-                <!-- Right User Status & Avatar -->
-                <div class="header-user-status">
+                <!-- Group 2: User Stats & Profile Wrapper -->
+                <div class="user-stats-wrapper header-user-status">
                     <div class="header-stat-pill">
                         <span>⚡</span>
                         <span id="dash-xp-text">1,450 XP</span>
@@ -664,13 +664,39 @@
                     <!-- Middle Panel: AI Conversation & Synthesis Display -->
                     <main class="tutor-main-chat">
                         <!-- Cram Timer Banner (visible in cram mode only) -->
-                        <div class="cram-timer-container" id="cram-timer">
-                            <div style="font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">⚡ High-Intensity Cram Protocol Active</div>
-                            <div class="cram-timer-display" id="timer-display">25:00</div>
-                            <div class="cram-timer-controls">
-                                <button class="timer-btn" onclick="startCramTimer()">▶ Start</button>
-                                <button class="timer-btn" onclick="pauseCramTimer()">⏸ Pause</button>
-                                <button class="timer-btn" onclick="resetCramTimer()">↺ Reset</button>
+                        <div class="cram-timer-container mode-card" id="cram-timer">
+                            <div class="cram-pomodoro-layout">
+                                <div class="cram-ring-wrapper">
+                                    <svg class="cram-progress-svg" width="140" height="140" viewBox="0 0 128 128">
+                                        <defs>
+                                            <linearGradient id="cramGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" stop-color="var(--primary-blue)" />
+                                                <stop offset="100%" stop-color="var(--electric-aqua)" />
+                                            </linearGradient>
+                                        </defs>
+                                        <!-- Background Circle -->
+                                        <circle class="cram-ring-bg" cx="64" cy="64" r="54" stroke-width="8" fill="transparent" />
+                                        <!-- Progress Ring -->
+                                        <circle class="cram-ring-progress" id="cram-ring-circle" cx="64" cy="64" r="54" stroke-width="8" fill="transparent" stroke="url(#cramGradient)" stroke-linecap="round" stroke-dasharray="339.292" stroke-dashoffset="0" />
+                                    </svg>
+                                    <!-- Centered Countdown Text inside the Circle -->
+                                    <div class="cram-countdown-text">
+                                        <span id="cram-countdown" style="font-family: var(--font-display);">25:00</span>
+                                        <span id="timer-display" style="display:none;">25:00</span>
+                                    </div>
+                                </div>
+                                <div class="cram-timer-controls">
+                                    <div style="font-size: 0.82rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: var(--primary-text); margin-bottom: 2px;">⚡ Pomodoro Cram Protocol</div>
+                                    <div class="cram-input-row">
+                                        <label for="cram-minutes" style="font-size: 0.8rem; color: var(--primary-text); font-weight: 700;">Minutes:</label>
+                                        <input type="number" id="cram-minutes" value="25" min="1" max="180" class="cram-minutes-input" onchange="resetCramTimer()">
+                                    </div>
+                                    <div class="cram-btn-row">
+                                        <button class="timer-btn" id="cram-timer-btn" onclick="toggleCramTimer()">▶ Start</button>
+                                        <button class="timer-btn" onclick="stopCramTimer()">⏸ Pause</button>
+                                        <button class="timer-btn" onclick="resetCramTimer()">↺ Reset</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

@@ -409,7 +409,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 20px;
+    gap: 1.5rem;
     background: var(--glass-bg);
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
@@ -480,10 +480,11 @@ body {
 }
 
 /* Study Mode Toggle & Upload Quick Buttons */
+.upload-actions-wrapper,
 .header-controls-center {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 .study-mode-toggle {
     display: flex;
@@ -533,6 +534,7 @@ body {
 }
 
 /* Header Right Status Bar */
+.user-stats-wrapper,
 .header-user-status {
     display: flex;
     align-items: center;
@@ -1640,38 +1642,122 @@ body {
     100% { height: 36px; }
 }
 
-/* Cram Timer Banner */
+/* Cram Timer Banner & Pomodoro Circular Clock */
+@keyframes pulse-dot {
+    0% { transform: scale(0.98); opacity: 0.85; }
+    100% { transform: scale(1.03); opacity: 1; }
+}
+
 .cram-timer-container {
     display: none;
-    text-align: center;
-    padding: 18px;
-    background: linear-gradient(135deg, #EF4444, #F97316);
+    padding: 16px 24px;
+    background: var(--dark);
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
     border-radius: 16px;
-    color: white;
+    color: var(--white);
     margin-bottom: 20px;
-    box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+    box-shadow: 0 10px 30px rgba(10, 15, 36, 0.4);
 }
 .cram-timer-container.visible { display: block; }
-.cram-timer-display {
-    font-size: 2.8rem;
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 2px;
+
+.cram-pomodoro-layout {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
 }
-.cram-timer-controls { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
+.cram-ring-wrapper {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.cram-progress-svg {
+    transform: rotate(-90deg);
+    width: 100%;
+    height: 100%;
+}
+.cram-ring-bg {
+    stroke: rgba(255, 255, 255, 0.12);
+}
+.cram-ring-progress {
+    transition: stroke-dashoffset 0.5s linear, stroke 0.3s ease;
+}
+.cram-countdown-text,
+.cram-countdown-text span,
+#cram-countdown {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading), var(--font-global), sans-serif;
+    font-size: 1.85rem;
+    font-weight: 800;
+    color: var(--primary-text);
+    letter-spacing: 1px;
+    z-index: 2;
+}
+.cram-timer-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+.cram-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.cram-minutes-input {
+    width: 65px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card-background);
+    color: var(--primary-text);
+    font-weight: 700;
+    font-size: 0.9rem;
+    font-family: var(--font-global);
+}
+.cram-btn-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
 .timer-btn {
-    padding: 8px 18px;
-    border: 2px solid rgba(255, 255, 255, 0.5);
-    background: transparent;
-    color: white;
+    padding: 6px 14px;
+    border: 1.5px solid var(--border);
+    background: var(--card-background);
+    color: var(--primary-text);
     border-radius: 10px;
     font-weight: 700;
     cursor: pointer;
     font-family: var(--font-global);
-    font-size: 0.88rem;
-    transition: 0.2s;
+    font-size: 0.82rem;
+    transition: var(--transition-smooth);
 }
-.timer-btn:hover { background: rgba(255, 255, 255, 0.2); }
+.timer-btn:hover {
+    background: rgba(37, 99, 235, 0.08);
+    border-color: var(--primary-blue);
+    color: var(--primary-blue);
+}
+
+/* Below 10% Warning State (shifts to --error-red with gentle pulse) */
+.cram-timer-container.warning .cram-ring-progress {
+    stroke: var(--error-red) !important;
+}
+.cram-timer-container.warning .cram-countdown-text span,
+.cram-timer-container.warning #cram-countdown {
+    color: var(--error-red) !important;
+    animation: pulse-dot 1.2s ease-in-out infinite alternate;
+}
+.cram-timer-container.warning .cram-ring-wrapper {
+    animation: pulse-dot 1.2s ease-in-out infinite alternate;
+}
 
 /* Quiz Form Block */
 .quiz-styled-form .quiz-question-block {
@@ -2087,6 +2173,74 @@ body {
     .hero-neural-gfx { margin-top: 20px; }
     
     .dashboard-tri-grid, .courses-horiz-grid, .badges-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    /* 1. Hero Section: Scale down welcome text and badge */
+    .welcome-title {
+        font-size: 1.45rem !important;
+        line-height: 1.25 !important;
+        margin-bottom: 14px !important;
+    }
+    .welcome-tagline {
+        font-size: 0.68rem !important;
+        padding: 4px 10px !important;
+        margin-bottom: 10px !important;
+    }
+    .hero-showcase-container {
+        padding: 18px !important;
+    }
+    
+    /* 2. Action Buttons: Force Upload containers & hero buttons to stack or wrap with width 100% */
+    .upload-actions-wrapper,
+    .header-controls-center,
+    .hero-quick-buttons {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+    }
+    .header-quick-chip,
+    .hero-btn,
+    .mode-btn {
+        width: 100% !important;
+        justify-content: center !important;
+        text-align: center !important;
+    }
+    .study-mode-toggle {
+        width: 100% !important;
+        display: flex !important;
+    }
+    .mode-btn {
+        flex: 1 !important;
+    }
+
+    /* 3. Badges: Scale down padding and text size to prevent horizontal scrolling */
+    .user-stats-wrapper,
+    .header-user-status {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        justify-content: center !important;
+        width: 100% !important;
+    }
+    .header-stat-pill {
+        padding: 5px 10px !important;
+        font-size: 0.75rem !important;
+    }
+    .hero-stats-grid {
+        gap: 8px !important;
+    }
+    .hero-stat-chip {
+        padding: 8px 10px !important;
+        flex: 1 1 calc(50% - 8px) !important;
+    }
+    .hero-stat-num {
+        font-size: 0.96rem !important;
+    }
+    .hero-stat-label {
+        font-size: 0.65rem !important;
+    }
 }
 
 /* ==========================================================================

@@ -84,16 +84,13 @@ _EXPLAIN_SYSTEM = {
 _QUIZ_SYSTEM = {
     "deep": (
         "You are an intelligent evaluation tool that generates a MIX of question types "
-        "based on the subject matter.\n\n"
-        "RULES FOR QUESTION TYPE SELECTION:\n"
+        "based on the subject matter, optimizing for genuine understanding and transfer.\n\n"
+        "RULES FOR QUESTION TYPE SELECTION & TRANSFER:\n"
         "- For THEORY topics (biology, history, literature, definitions): generate 'mcq' questions.\n"
-        "- For MATH/PHYSICS topics (calculus, algebra, equations, derivations, kinematics, circuits, "
-        "thermodynamics, electromagnetic fields): generate 'structural' questions that require "
-        "the student to SHOW THEIR WORK — solve equations, derive formulas, or compute values step by step.\n"
-        "- For CODING/CS topics (algorithms, data structures, Python, JavaScript, system design): "
-        "generate 'code' questions that ask the student to write a function, debug code, or explain "
-        "what a code snippet does.\n"
-        "- You MAY mix types within the same quiz if the material covers both theory AND math/code.\n\n"
+        "- For MATH/PHYSICS topics: generate 'structural' questions requiring step-by-step worked solutions.\n"
+        "- For CODING/CS topics: generate 'code' questions requiring writing or debugging code.\n"
+        "- DEEP TRANSFER REQUIREMENT: At least one question per set MUST require applying the concept "
+        "to a NEW scenario or real-world problem not explicitly covered in the source material, to test transfer rather than recall.\n\n"
         "QUESTION FORMAT BY TYPE:\n"
         "1. MCQ: {\"id\": N, \"type\": \"mcq\", \"question\": \"...\", "
         "\"options\": {\"A\": \"...\", \"B\": \"...\", \"C\": \"...\", \"D\": \"...\"}, "
@@ -110,13 +107,15 @@ _QUIZ_SYSTEM = {
     ),
     "cram": (
         "You are a rapid-fire exam coach that generates a MIX of question types "
-        "based on the subject matter.\n\n"
-        "RULES FOR QUESTION TYPE SELECTION:\n"
-        "- For THEORY topics: generate 'mcq' questions focused on recall.\n"
-        "- For MATH/PHYSICS topics: generate 'structural' questions — shorter calculations, "
-        "formula application, quick derivations. Keep them exam-style and concise.\n"
-        "- For CODING/CS topics: generate 'code' questions — short function writing, "
-        "output prediction, or bug fixing.\n\n"
+        "based on the subject matter, optimizing for exam recognition under time pressure.\n\n"
+        "RULES FOR QUESTION TYPE SELECTION & DISTRACTORS:\n"
+        "- For THEORY topics: generate 'mcq' questions focused on rapid recognition.\n"
+        "- For MATH/PHYSICS topics: generate 'structural' questions (short calculations/formula checks).\n"
+        "- For CODING/CS topics: generate 'code' questions (output prediction or quick bug hunting).\n"
+        "- CRAM DISTRACTOR REQUIREMENT: For MCQ questions, generate distractors (wrong options) that mirror "
+        "REAL common mistakes students make on this topic, not just plausible-sounding filler — these should be "
+        "the specific wrong answers students actually pick (e.g. sign errors, missed units, common misconception traps), "
+        "so the loop trains pattern recognition against real exam traps.\n\n"
         "QUESTION FORMAT BY TYPE:\n"
         "1. MCQ: {\"id\": N, \"type\": \"mcq\", \"question\": \"...\", "
         "\"options\": {\"A\": \"...\", \"B\": \"...\", \"C\": \"...\", \"D\": \"...\"}, "
@@ -158,18 +157,22 @@ _EVALUATE_SYSTEM = (
 
 _REEXPLAIN_SYSTEM = {
     "deep": (
-        "You are an adaptive tutor. The student struggled with specific "
-        "concepts during their quiz. Re-explain the topic, focusing "
-        "directly on fixing their weak points. Use a DIFFERENT analogy "
-        "and a worked example. Do NOT repeat the original explanation. "
+        "You are an adaptive tutor optimizing for genuine understanding and transfer. "
+        "The student struggled with specific concepts during their quiz.\n"
+        "Before re-explaining, you must infer what INCORRECT mental model likely produced that "
+        "specific wrong answer (not just 'they don't know X' — reason about why THIS wrong answer "
+        "was chosen, what flawed logic leads there). Then the re-explanation should directly name "
+        "and correct that specific misconception, not just restate the correct definition differently.\n"
+        "Use a DIFFERENT analogy and a worked example. Do NOT repeat the original explanation.\n"
         "Return a JSON object with keys: "
         "'title' (string), 're_explanation' (string, markdown), "
         "'reassurance' (string — encouraging sign-off)."
     ),
     "cram": (
-        "You are a last-minute exam coach. The student missed key concepts. "
-        "Give a compressed alternative angle on those concepts — different "
-        "mnemonics, different framing — in exam-ready bullet form. "
+        "You are a last-minute exam coach optimizing for rapid recognition. The student missed key concepts.\n"
+        "On a wrong answer, do NOT attempt to diagnose or fix a misconception — there's no time for that in this mode. "
+        "Instead return a short, sharper restatement or a compact mnemonic that's easier to hold in short-term memory than the original. "
+        "The goal is repetition and recognition, not deep correction — keep it to 1-2 tight sentences or a memorable phrase.\n"
         "Return a JSON object with keys: "
         "'title' (string), 're_explanation' (string, markdown), "
         "'reassurance' (string — encouraging sign-off)."
@@ -200,13 +203,19 @@ def get_quiz(context_text: str, mode: str = "deep", num_questions: int = 4) -> d
     system = _QUIZ_SYSTEM.get(mode, _QUIZ_SYSTEM["deep"])
     user = (
         f"Generate exactly {num_questions} questions based on this study material.\n"
+        f"MODE: {mode.upper()}\n"
         f"CRITICAL RULES:\n"
         f"1. Analyze whether the material involves mathematics, equations, physics, numerical calculation, or derivations.\n"
         f"   - If YES (e.g. quadratic equations, inclined plane, kinematics, calculus), you MUST generate 'structural' questions requiring step-by-step worked calculations. Do NOT generate MCQ for math problems.\n"
         f"2. If the material involves programming/CS, generate 'code' questions.\n"
-        f"3. Only use 'mcq' for theoretical/conceptual definitions.\n\n"
-        f"Study Material:\n\n{context_text}"
+        f"3. Only use 'mcq' for theoretical/conceptual definitions.\n"
     )
+    if mode == "deep":
+        user += "4. At least one question per set must require applying the concept to a NEW scenario not explicitly covered in the source material, to test transfer rather than recall.\n\n"
+    elif mode == "cram":
+        user += "4. For any MCQ questions, generate distractors (wrong options) that mirror REAL common mistakes students make on this topic, not just plausible-sounding filler — these should be the specific wrong answers students actually pick, so the loop trains pattern recognition against real exam traps.\n\n"
+    
+    user += f"Study Material:\n\n{context_text}"
     return _call_deepseek(system, user)
 
 
@@ -229,7 +238,17 @@ def get_reexplanation(
     system = _REEXPLAIN_SYSTEM.get(mode, _REEXPLAIN_SYSTEM["deep"])
     user = (
         f"Topic: {topic}\n"
+        f"Mode: {mode.upper()}\n"
         f"Original Explanation: {original_explanation}\n"
-        f"Concepts they got wrong: {json.dumps(weak_points)}"
+        f"Concepts they got wrong: {json.dumps(weak_points)}\n"
     )
+    if mode == "deep":
+        user += "\nBefore re-explaining, infer what INCORRECT mental model likely produced that specific wrong answer (why THIS wrong answer was chosen, what flawed logic leads there). Then directly name and correct that specific misconception."
+    elif mode == "cram":
+        user += "\nDo NOT attempt to diagnose or fix a misconception. Return a short, sharper restatement or a compact mnemonic that's easier to hold in short-term memory than the original. The goal is repetition and recognition, not deep correction — keep it to 1-2 tight sentences or a memorable phrase."
     return _call_deepseek(system, user)
+
+
+# Aliases for explicit compatibility with generate_quiz and generate_reexplanation naming conventions
+generate_quiz = get_quiz
+generate_reexplanation = get_reexplanation
