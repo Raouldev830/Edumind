@@ -34,9 +34,9 @@ const CAREER_ALIGNED_TASKS = {
 
 // --- PERSISTENT DATA ---
 let userTimetable = JSON.parse(localStorage.getItem('timetable')) || [
-    { id: 1, day: "Mon", tag: "physics", subject: "Quantum Mechanics Core Review" },
-    { id: 2, day: "Wed", tag: "electronics", subject: "Embedded Microcontrollers Lab" },
-    { id: 3, day: "Fri", tag: "cs", subject: "FastAPI Production API Design" }
+    { id: 1, day: "Mon", time: "09:00 - 11:00 AM", tag: "physics", subject: "Quantum Mechanics Core Review", status: "upcoming" },
+    { id: 2, day: "Wed", time: "02:00 - 04:00 PM", tag: "electronics", subject: "Embedded Microcontrollers Lab", status: "upcoming" },
+    { id: 3, day: "Fri", time: "10:30 - 12:00 PM", tag: "cs", subject: "FastAPI Production API Design", status: "upcoming" }
 ];
 
 let userAssignments = JSON.parse(localStorage.getItem('assignments')) || [
@@ -114,8 +114,9 @@ async function initDashboard() {
     renderAssignments(userAssignments);
     buildActivityHeatmap();
 
-    // File Upload Listener
+    // File Upload & Drag-Drop Listeners
     document.getElementById('file-input')?.addEventListener('change', handleFileUpload);
+    setupGlobalDragDrop();
 
     // Profile Load
     await refreshProfile();
@@ -787,14 +788,116 @@ function logHeatmapActivity() {
 // TIMETABLE & ASSIGNMENTS
 // ============================================
 
+let currentScheduleViewMode = 'kanban';
+let currentScheduleFilterTag = 'all';
+
+function setScheduleViewMode(mode) {
+    currentScheduleViewMode = mode;
+    document.getElementById('tab-kanban')?.classList.toggle('active', mode === 'kanban');
+    document.getElementById('tab-table')?.classList.toggle('active', mode === 'table');
+    renderTimetable(userTimetable);
+}
+
+function setScheduleTagFilter(tag, btnEl) {
+    currentScheduleFilterTag = tag;
+    document.querySelectorAll('.notion-filter-pill').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+    renderTimetable(userTimetable);
+}
+
+function toggleTimetableStatus(id) {
+    const item = userTimetable.find(x => x.id === id);
+    if (item) {
+        item.status = item.status === 'done' ? 'upcoming' : 'done';
+        saveAndSync();
+    }
+}
+
+function quickAddSlotForDay(day) {
+    const daySelect = document.getElementById('schedule-day');
+    if (daySelect) daySelect.value = day;
+    document.getElementById('schedule-subject')?.focus();
+}
+
 function renderTimetable(list) {
     const box = document.getElementById('timetable-container');
     if (!box) return;
-    box.innerHTML = list.map(item => `
-        <div class="notion-item-row">
-            <div><span class="day-tag">${item.day}</span> <span class="field-pill pill-${item.tag}">${item.tag.toUpperCase()}</span> ${item.subject}</div>
-            <button class="delete-btn" onclick="deleteTimetableSlot(${item.id})">❌</button>
-        </div>`).join('');
+
+    // Filter by active tag if not all
+    const filtered = currentScheduleFilterTag === 'all' 
+        ? list 
+        : list.filter(item => item.tag === currentScheduleFilterTag);
+
+    if (currentScheduleViewMode === 'kanban') {
+        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        box.innerHTML = `<div class="notion-kanban-board">` + days.map(day => {
+            const dayItems = filtered.filter(item => item.day === day);
+            return `
+                <div class="notion-kanban-column">
+                    <div class="notion-column-header">
+                        <span class="notion-day-title">📌 ${day}</span>
+                        <span class="notion-count-badge">${dayItems.length}</span>
+                    </div>
+                    <div class="notion-kanban-cards">
+                        ${dayItems.length === 0 ? `<div style="color:var(--secondary-text); font-size:0.8rem; text-align:center; padding: 20px 0; opacity:0.6;">No slots scheduled</div>` : ''}
+                        ${dayItems.map(item => `
+                            <div class="notion-slot-card">
+                                <div class="notion-slot-time">
+                                    <span>🕒 ${item.time || 'Flexible'}</span>
+                                    <span class="field-pill pill-${item.tag}" style="margin-left:auto; font-size:0.7rem;">${item.tag.toUpperCase()}</span>
+                                </div>
+                                <div class="notion-slot-title">${item.subject}</div>
+                                <div class="notion-slot-footer">
+                                    <span class="notion-slot-status ${item.status || 'upcoming'}" style="cursor:pointer;" onclick="toggleTimetableStatus(${item.id})">${(item.status || 'upcoming').toUpperCase()}</span>
+                                    <div class="notion-slot-actions">
+                                        <button title="Study with AI Tutor" style="background:none; border:none; cursor:pointer; font-size:0.9rem;" onclick="navigateTo('practice'); document.getElementById('topic-input').value='${item.subject}'; triggerExplanation();">⚡</button>
+                                        <button class="delete-btn" onclick="deleteTimetableSlot(${item.id})">❌</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button class="notion-add-slot-btn" onclick="quickAddSlotForDay('${day}')">＋ Add Slot</button>
+                </div>
+            `;
+        }).join('') + `</div>`;
+    } else {
+        // Table Database view
+        box.innerHTML = `
+            <table class="notion-database-table">
+                <thead>
+                    <tr>
+                        <th>Day</th>
+                        <th>Time</th>
+                        <th>Subject Focus</th>
+                        <th>Tag</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${filtered.length === 0 ? `<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--secondary-text);">No schedule slots matching current filter</td></tr>` : ''}
+                    ${filtered.map(item => `
+                        <tr>
+                            <td><strong style="color:var(--primary-blue);">${item.day}</strong></td>
+                            <td><span style="font-size:0.85rem; color:var(--secondary-text);">🕒 ${item.time || 'Flexible'}</span></td>
+                            <td><strong>${item.subject}</strong></td>
+                            <td><span class="field-pill pill-${item.tag}">${item.tag.toUpperCase()}</span></td>
+                            <td>
+                                <span class="notion-slot-status ${item.status || 'upcoming'}" style="cursor:pointer;" onclick="toggleTimetableStatus(${item.id})">${(item.status || 'upcoming').toUpperCase()}</span>
+                            </td>
+                            <td>
+                                <div style="display:flex; gap:8px; align-items:center;">
+                                    <button class="resume-btn" style="padding:4px 10px; font-size:0.78rem;" onclick="navigateTo('practice'); document.getElementById('topic-input').value='${item.subject}'; triggerExplanation();">⚡ Study</button>
+                                    <button class="delete-btn" onclick="deleteTimetableSlot(${item.id})">❌</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    }
 }
 
 function renderAssignments(list) {
@@ -809,12 +912,15 @@ function renderAssignments(list) {
 
 function addScheduleSlot() {
     const day = document.getElementById('schedule-day').value;
+    const timeEl = document.getElementById('schedule-time');
+    const time = timeEl ? timeEl.value.trim() || "Flexible Slot" : "Flexible Slot";
     const tag = document.getElementById('schedule-tag').value;
     const subject = document.getElementById('schedule-subject').value;
     if (!subject) return alert("Enter a subject.");
-    userTimetable.push({ id: Date.now(), day, tag, subject });
+    userTimetable.push({ id: Date.now(), day, time, tag, subject, status: 'upcoming' });
     saveAndSync();
     document.getElementById('schedule-subject').value = '';
+    if (timeEl) timeEl.value = '';
 }
 
 function deleteTimetableSlot(id) {
@@ -997,12 +1103,41 @@ function initNavigationRouter() {
 }
 
 // ============================================
-// FILE UPLOAD
+// FILE UPLOAD & DRAG AND DROP
 // ============================================
+
+function setupGlobalDragDrop() {
+    // Prevent browser default behavior (opening PDF/image in new tab) globally across window
+    window.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, false);
+
+    window.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const files = e.dataTransfer ? e.dataTransfer.files : null;
+        if (files && files.length > 0) {
+            handleFileUpload({ target: { files: [files[0]], value: '' } });
+        }
+    }, false);
+}
+
+async function handleDragDropUpload(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const files = e.dataTransfer ? e.dataTransfer.files : null;
+    if (files && files.length > 0) {
+        await handleFileUpload({ target: { files: [files[0]], value: '' } });
+    }
+}
 
 async function handleFileUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
+
+    // Immediately switch to Practice view so user sees loading & explanation
+    navigateTo('practice');
 
     const labelEl = document.getElementById('attachment-label');
     const originalLabel = labelEl ? labelEl.innerText : "";
@@ -1054,6 +1189,7 @@ async function handleFileUpload(e) {
         document.getElementById('topic-input').value = `Uploaded File: ${data.filename || file.name}`;
 
         // Automatically send the extracted text to the AI for deep/cram analysis and breakdown
+        navigateTo('practice');
         await triggerExplanationFromText(data.extracted_text, `Uploaded Document: ${data.filename || file.name}`);
 
     } catch (err) {

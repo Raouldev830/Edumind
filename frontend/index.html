@@ -831,7 +831,7 @@
                 </div>
 
                 <!-- Drag & Drop Upload Zone -->
-                <div style="background: var(--background); border: 2px dashed rgba(37, 99, 235, 0.4); border-radius: var(--curve-radius); padding: 50px 30px; text-align: center; cursor: pointer; transition: var(--transition-smooth);" onclick="document.getElementById('file-input').click()" onmouseover="this.style.borderColor='var(--primary-blue)'; this.style.background='rgba(37, 99, 235, 0.04)'" onmouseout="this.style.borderColor='rgba(37, 99, 235, 0.4)'; this.style.background='var(--background)'">
+                <div style="background: var(--background); border: 2px dashed rgba(37, 99, 235, 0.4); border-radius: var(--curve-radius); padding: 50px 30px; text-align: center; cursor: pointer; transition: var(--transition-smooth);" onclick="document.getElementById('file-input').click()" ondragover="event.preventDefault(); event.stopPropagation(); this.style.borderColor='var(--primary-blue)'; this.style.background='rgba(37, 99, 235, 0.12)';" ondragleave="this.style.borderColor='rgba(37, 99, 235, 0.4)'; this.style.background='var(--background)';" ondrop="handleDragDropUpload(event)" onmouseover="this.style.borderColor='var(--primary-blue)'; this.style.background='rgba(37, 99, 235, 0.04)'" onmouseout="this.style.borderColor='rgba(37, 99, 235, 0.4)'; this.style.background='var(--background)'">
                     <div style="font-size: 3.5rem; margin-bottom: 16px;">☁️</div>
                     <h4 style="font-size: 1.35rem; font-weight: 800; color: var(--primary-text); margin-bottom: 8px;">Drag & Drop Your Documents Here or Click to Browse</h4>
                     <p style="color: var(--secondary-text); font-size: 0.92rem; max-width: 520px; margin: 0 auto 20px auto;">Supported formats: PDF, Word (.docx), PowerPoint (.pptx), and high-resolution images (.png, .jpg, .webp) with automatic OCR synthesis.</p>
@@ -885,22 +885,40 @@
             <div id="view-schedule" class="router-view content-card">
                 <div class="card-inline-header">
                     <div>
-                        <h3 class="card-heading">📅 Academic Planner & Class Timetable DB</h3>
-                        <p style="font-size: 0.88rem; color: var(--secondary-text); margin-top: 4px;">Sync your lectures, lab sessions, and automated study slots into your personal matrix.</p>
+                        <h3 class="card-heading">🗂️ Notion Weekly Schedule & Academic Planner DB</h3>
+                        <p style="font-size: 0.88rem; color: var(--secondary-text); margin-top: 4px;">Organize your semester workflow across a dynamic Kanban board or structured database table.</p>
                     </div>
-                    <button class="header-action-btn" onclick="document.getElementById('schedule-subject').focus()">＋ Add Schedule Entry</button>
+                    <button class="header-action-btn" onclick="document.getElementById('schedule-subject').focus()">＋ New Study Slot</button>
                 </div>
 
-                <div id="timetable-container" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                <!-- Notion Schedule Toolbar -->
+                <div class="notion-schedule-toolbar">
+                    <div class="notion-view-tabs">
+                        <button class="notion-view-tab active" id="tab-kanban" onclick="setScheduleViewMode('kanban')">📋 Board (Kanban)</button>
+                        <button class="notion-view-tab" id="tab-table" onclick="setScheduleViewMode('table')">📑 Database Table</button>
+                    </div>
+                    <div class="notion-filter-pills">
+                        <span style="font-size: 0.78rem; font-weight: 800; color: var(--secondary-text); margin-right: 4px;">FILTER:</span>
+                        <button class="notion-filter-pill active" onclick="setScheduleTagFilter('all', this)">All Subjects</button>
+                        <button class="notion-filter-pill" onclick="setScheduleTagFilter('cs', this)">CS & Algorithms</button>
+                        <button class="notion-filter-pill" onclick="setScheduleTagFilter('physics', this)">Applied Physics</button>
+                        <button class="notion-filter-pill" onclick="setScheduleTagFilter('electronics', this)">Electronics</button>
+                        <button class="notion-filter-pill" onclick="setScheduleTagFilter('robotics', this)">Robotics</button>
+                    </div>
+                </div>
+
+                <!-- Main Timetable Container (Kanban / Table) -->
+                <div id="timetable-container"></div>
                 
-                <div class="inline-input-matrix">
-                    <select id="schedule-day">
-                        <option value="Mon">Mon</option><option value="Tue">Tue</option><option value="Wed">Wed</option><option value="Thu">Thu</option><option value="Fri">Fri</option>
+                <div class="inline-input-matrix" style="margin-top: 24px; background: var(--surface-bg); padding: 14px; border-radius: 14px; border: 1.5px solid var(--border);">
+                    <select id="schedule-day" style="font-weight: 700;">
+                        <option value="Mon">Mon</option><option value="Tue">Tue</option><option value="Wed">Wed</option><option value="Thu">Thu</option><option value="Fri">Fri</option><option value="Sat">Sat</option><option value="Sun">Sun</option>
                     </select>
-                    <select id="schedule-tag">
+                    <input type="text" id="schedule-time" placeholder="Time (e.g. 09:00 - 11:00 AM)" style="width: 170px; font-weight: 600;">
+                    <select id="schedule-tag" style="font-weight: 700;">
                         <option value="cs">CS</option><option value="physics">Phys</option><option value="electronics">Elec</option><option value="robotics">Robo</option>
                     </select>
-                    <input type="text" id="schedule-subject" placeholder="Enter module or class focus...">
+                    <input type="text" id="schedule-subject" placeholder="Enter module or study focus...">
                     <button class="square-add-btn" onclick="addScheduleSlot()">＋</button>
                 </div>
             </div>

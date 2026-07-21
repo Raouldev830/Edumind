@@ -27,20 +27,8 @@ client = OpenAI(
 # ---------------------------------------------------------------------------
 
 def _call_deepseek(system_prompt: str, user_prompt: str) -> dict:
-    """Send a prompt pair to DeepSeek and return parsed JSON.  Retries once."""
-    try:
-        response = client.chat.completions.create(
-            model="deepseek-v4-flash",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            response_format={"type": "json_object"},
-        )
-        return json.loads(response.choices[0].message.content)
-    except Exception as e:
-        # Simple fallback retry if the first call glitches
-        print(f"API Error encountered: {e}. Retrying once...")
+    """Send a prompt pair to DeepSeek and return parsed JSON. Retries with cleanup."""
+    for attempt in range(2):
         try:
             response = client.chat.completions.create(
                 model="deepseek-v4-flash",
@@ -49,11 +37,22 @@ def _call_deepseek(system_prompt: str, user_prompt: str) -> dict:
                     {"role": "user", "content": user_prompt},
                 ],
                 response_format={"type": "json_object"},
+                timeout=45.0,
             )
-            return json.loads(response.choices[0].message.content)
-        except Exception as final_error:
-            print(f"Final failure: {final_error}")
-            return {"error": "Failed to communicate with AI helper. Try again shortly."}
+            raw_content = response.choices[0].message.content.strip()
+            # If wrapped in markdown code fence (` ```json ... ` ```), clean it
+            if raw_content.startswith("```"):
+                lines = raw_content.split("\n")
+                if lines[0].startswith("```"):
+                    lines = lines[1:]
+                if lines and lines[-1].startswith("```"):
+                    lines = lines[:-1]
+                raw_content = "\n".join(lines).strip()
+            return json.loads(raw_content)
+        except Exception as e:
+            print(f"API Attempt {attempt + 1} Error: {e}")
+            if attempt == 1:
+                return {"error": f"AI Service Error ({type(e).__name__}): {str(e)[:150]}. Please try again."}
 
 
 # ---------------------------------------------------------------------------
@@ -65,7 +64,9 @@ _EXPLAIN_SYSTEM = {
         "You are an expert university professor. Explain complex concepts "
         "thoroughly with analogies, real-world examples, and clear structure. "
         "Use markdown formatting for readability. "
-        "Return a JSON object with keys: "
+        "IMPORTANT: Even if the user asks to generate flashcards, summaries, or code examples, "
+        "format your response inside the 'explanation' string (e.g. as markdown flashcard tables or sections) "
+        "and MUST return a valid JSON object with keys: "
         "'title' (string), 'explanation' (string, markdown), "
         "'key_takeaways' (array of short bullet-point strings)."
     ),
@@ -73,7 +74,8 @@ _EXPLAIN_SYSTEM = {
         "You are an exam prep specialist. Give compressed, high-yield, "
         "exam-critical facts only. No fluff, no lengthy analogies. "
         "Use bullet points and bold for scanability. "
-        "Return a JSON object with keys: "
+        "IMPORTANT: Even if the user asks for flashcards or summaries, format them inside 'explanation' "
+        "and MUST return a valid JSON object with keys: "
         "'title' (string), 'explanation' (string, markdown), "
         "'key_takeaways' (array of short bullet-point strings)."
     ),
@@ -197,8 +199,13 @@ def get_quiz(context_text: str, mode: str = "deep", num_questions: int = 4) -> d
     """Generate quiz questions from the provided study material."""
     system = _QUIZ_SYSTEM.get(mode, _QUIZ_SYSTEM["deep"])
     user = (
-        f"Generate exactly {num_questions} multiple-choice quiz questions "
-        f"based on this study material:\n\n{context_text}"
+        f"Generate exactly {num_questions} questions based on this study material.\n"
+        f"CRITICAL RULES:\n"
+        f"1. Analyze whether the material involves mathematics, equations, physics, numerical calculation, or derivations.\n"
+        f"   - If YES (e.g. quadratic equations, inclined plane, kinematics, calculus), you MUST generate 'structural' questions requiring step-by-step worked calculations. Do NOT generate MCQ for math problems.\n"
+        f"2. If the material involves programming/CS, generate 'code' questions.\n"
+        f"3. Only use 'mcq' for theoretical/conceptual definitions.\n\n"
+        f"Study Material:\n\n{context_text}"
     )
     return _call_deepseek(system, user)
 
