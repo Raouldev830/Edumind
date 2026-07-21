@@ -1,26 +1,20 @@
 """
 MindLoop backend entrypoint.
-
-Run locally with:
-    uvicorn main:app --reload --port 8000
-
-Then check http://localhost:8000/docs for the interactive API explorer —
-useful for testing endpoints before the frontend is connected.
+Run locally with: uvicorn main:app --reload --port 8000
 """
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-import database  # Gamification tracker database module
+import database
 from routes import router
 
-app = FastAPI(title="MindLoop API", version="0.1.0")
+# 1. Initialize app
+app = FastAPI(title="MindLoop API", version="0.2.0")
 
-# Fire up the SQLite tables and create the default user on startup
+# 2. Setup Database (creates tables + default user if needed)
 database.init_db()
 
-# Allow the frontend (running on a different port during dev) to call this API.
-# Tighten this before submission if you deploy publicly.
+# 3. Setup CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,4 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 4. Include all routes
 app.include_router(router)
+
+print("🚀 MindLoop API v0.2.0 started — adaptive study coach ready.")

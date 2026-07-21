@@ -1,58 +1,118 @@
-// mock-data.js
+// mock-data.js — Complete mock response shapes for all API endpoints
 window.mockData = {
     profile: {
         username: "StudentPro",
         level: 2,
         streak: 5,
         xp: 120,
-        xp_next_level: 200
+        xp_next_level: 400,
+        weak_points: [
+            {
+                concept_tag: "vanishing_gradients",
+                topic: "Understanding Neural Network Backpropagation",
+                times_missed: 2,
+                created_at: "2026-07-20T14:30:00Z"
+            },
+            {
+                concept_tag: "chain_rule_gradients",
+                topic: "Understanding Neural Network Backpropagation",
+                times_missed: 1,
+                created_at: "2026-07-20T15:00:00Z"
+            },
+            {
+                concept_tag: "asymptotic_notation",
+                topic: "Algorithm Analysis & Big-O Notation",
+                times_missed: 3,
+                created_at: "2026-07-19T10:00:00Z"
+            }
+        ]
     },
     explanation: {
-        explanation: "Concept Analysis: FastAPI Engine Architecture & Hardware Telemetry Synchronization\n\n" +
-                     "1. ASYNCHRONOUS PIPELINES: FastAPI utilizes Python's ASGI (Asynchronous Server Gateway Interface) standard, leveraging async/await design patterns to handle high-concurrency connections without blocking the main execution thread. This is critical when receiving parallel sensor logs from hardware telemetry arrays.\n\n" +
-                     "2. EMBEDDED SYSTEM COUPLING: When microcontrollers stream data points over WebSockets, the backend pushes data frames straight into an in-memory database layout (like SQLite or Redis). This minimizes write latency and avoids traditional I/O bottlenecks.\n\n" +
-                     "3. QUANTUM STATE SIMULATION CONSIDERATIONS: When scaling mathematical or hardware processing vectors, ensuring data integrity across real-time sockets allows dashboards to maintain deterministic state representations.",
+        title: "Understanding Neural Network Backpropagation",
+        explanation: "Backpropagation is the fundamental algorithm that allows neural networks to learn from their mistakes.\n\n1. FORWARD PASS: Input data flows through the network layer by layer. Each neuron computes a weighted sum of its inputs, applies an activation function, and passes the result forward. At the end, the network produces a prediction.\n\n2. LOSS CALCULATION: The network's output is compared against the expected result using a loss function (e.g., MSE or Cross-Entropy). This produces a single number representing how wrong the prediction was.\n\n3. BACKWARD PASS: The gradient of the loss is computed with respect to each weight in the network, starting from the output layer and moving backward. This uses the chain rule of calculus to decompose the total error into contributions from each weight.\n\n4. WEIGHT UPDATE: Using gradient descent, each weight is nudged in the direction that reduces the loss. The learning rate controls how big each step is — too large causes overshooting, too small causes slow convergence.",
+        key_takeaways: [
+            "Backpropagation uses the chain rule of calculus to compute gradients",
+            "The learning rate controls how large each weight update step is",
+            "Vanishing gradients can occur in deep networks with certain activation functions",
+            "Mini-batch gradient descent balances speed and stability"
+        ],
         gamification: {
-            xp_earned: 50,
+            xp_earned: 25,
+            new_total_xp: 145,
             current_level: 2,
-            current_streak: 5
+            current_streak: 5,
+            level_up_occurred: false
         }
     },
     quiz: {
         questions: [
             {
-                id: 101,
-                question: "Which architectural element enables FastAPI to manage non-blocking concurrent connections?",
+                id: 1,
+                question: "What mathematical principle does backpropagation rely on to compute gradients through multiple layers?",
                 options: {
-                    A: "Synchronous WSGI thread pooling",
-                    B: "Asynchronous ASGI loop implementation",
-                    C: "Traditional multi-process branching model",
-                    D: "Hardware-level clock cycle interrupts"
+                    A: "The Pythagorean theorem",
+                    B: "The chain rule of calculus",
+                    C: "Bayes' theorem",
+                    D: "The central limit theorem"
                 },
-                correct_answer: "B"
+                correct_answer: "B",
+                concept_tag: "chain_rule_gradients"
             },
             {
-                id: 102,
-                question: "What is the primary technical advantage of utilizing WebSockets over normal standard HTTP requests for hardware drone logging?",
+                id: 2,
+                question: "What problem can occur in deep networks when using sigmoid activation functions during backpropagation?",
                 options: {
-                    A: "Bidirectional persistent streaming containing significantly lower overhead protocol headers",
-                    B: "Enhanced safety algorithms optimized strictly for hardware data caching",
-                    C: "Forced synchronous execution pathways on embedded microcontrollers",
-                    D: "Automatic database compilation and optimization steps"
+                    A: "Exploding memory usage",
+                    B: "Infinite loop recursion",
+                    C: "Vanishing gradients",
+                    D: "Data type overflow"
                 },
-                correct_answer: "A"
+                correct_answer: "C",
+                concept_tag: "vanishing_gradients"
             },
             {
-                id: 103,
-                question: "How should a real-time dashboard structure data processing layers to maintain smooth 60 FPS visual state updates?",
+                id: 3,
+                question: "What does the learning rate parameter control during weight updates?",
                 options: {
-                    A: "Execute heavy array sorting routines on the primary UI thread repeatedly",
-                    B: "Batch coming telemetry arrays into non-blocking frame buffers and use virtual lists",
-                    C: "Force full browser window reloads on every single arriving data packet",
-                    D: "Convert all metric assets into raw video layers dynamically on the fly"
+                    A: "The number of training epochs",
+                    B: "The size of each weight adjustment step",
+                    C: "The batch size for data loading",
+                    D: "The number of hidden layers"
                 },
-                correct_answer: "B"
+                correct_answer: "B",
+                concept_tag: "learning_rate"
+            },
+            {
+                id: 4,
+                question: "In backpropagation, what is the purpose of the forward pass?",
+                options: {
+                    A: "To update all network weights simultaneously",
+                    B: "To compute the network's prediction given current weights",
+                    C: "To shuffle the training data randomly",
+                    D: "To prune unnecessary neurons"
+                },
+                correct_answer: "B",
+                concept_tag: "forward_pass"
             }
         ]
+    },
+    evaluation: {
+        score: 3,
+        total_questions: 4,
+        passed: true,
+        weak_points: ["vanishing_gradients"],
+        feedback: "Strong performance overall! You clearly understand the chain rule and forward pass mechanics. However, you confused vanishing gradients with exploding memory — review how sigmoid squashes gradients in deep layers.",
+        gamification: {
+            xp_earned: 75,
+            new_total_xp: 220,
+            current_level: 2,
+            current_streak: 5,
+            level_up_occurred: false
+        }
+    },
+    reexplanation: {
+        title: "Vanishing Gradients — A Different Angle",
+        re_explanation: "Think of it like a game of telephone. In a deep network, the gradient signal has to travel backward through many layers. Each layer multiplies it by the derivative of its activation function.\n\nWith sigmoid: the derivative is always between 0 and 0.25. Multiply a number by 0.25 ten times in a row and it becomes incredibly tiny — effectively zero.\n\nThat's the vanishing gradient problem: by the time the error signal reaches the early layers, it's so small that those layers barely learn anything.\n\nSolution: Use ReLU (derivative is either 0 or 1) or residual connections (skip connections that let the gradient flow directly).",
+        reassurance: "This is one of the trickiest concepts in deep learning — the fact that you got the other 3 right shows you understand the fundamentals. This one piece will click with practice! 🎯"
     }
 };
