@@ -145,7 +145,7 @@
                     <button class="header-quick-chip" onclick="document.getElementById('file-input').click()">📄 Upload PDF</button>
                     <button class="header-quick-chip" onclick="document.getElementById('file-input').click()">🖼️ Upload Image</button>
                     <!-- Hidden File Input for Global & Practice Uploads -->
-                    <input type="file" id="file-input" accept=".pdf, .png, .jpg, .jpeg, .webp" style="display:none;">
+                    <input type="file" id="file-input" accept=".pdf,.png,.jpg,.jpeg,.webp" style="display:none;" onchange="handleFileUpload(event)">
                 </div>
 
                 <!-- Right User Status & Avatar -->

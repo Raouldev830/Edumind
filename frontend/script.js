@@ -1025,6 +1025,58 @@ async function handleFileUpload(e) {
 }
 
 // ============================================
+// MISSING UTILITY FUNCTIONS
+// ============================================
+
+function updateMockStatusDisplay(isChecked) {
+    const statusText = document.getElementById('settings-mock-status-text');
+    if (statusText) {
+        statusText.innerText = isChecked ? 'Simulated (Mock) Mode' : 'Live Backend Mode';
+    }
+    refreshProfile();
+}
+
+function resetUserData() {
+    if (!confirm("Are you sure you want to reset all progress, timetable, and assignments to defaults?")) return;
+    
+    // Reset timetable
+    userTimetable = [
+        { id: 1, day: "Mon", tag: "physics", subject: "Quantum Mechanics Core Review" },
+        { id: 2, day: "Wed", tag: "electronics", subject: "Embedded Microcontrollers Lab" },
+        { id: 3, day: "Fri", tag: "cs", subject: "FastAPI Production API Design" }
+    ];
+    
+    // Reset assignments
+    userAssignments = [
+        { id: 1, title: "Refine Real-time Environmental Data Schemas", due: "2 Days", tracking: "Tech Startup Architecture" }
+    ];
+    
+    // Reset activity heatmap
+    systemActivityLog = {};
+    
+    // Persist to localStorage
+    localStorage.setItem('timetable', JSON.stringify(userTimetable));
+    localStorage.setItem('assignments', JSON.stringify(userAssignments));
+    localStorage.setItem('activityLog', JSON.stringify(systemActivityLog));
+    
+    // Re-render
+    renderTimetable(userTimetable);
+    renderAssignments(userAssignments);
+    buildActivityHeatmap();
+    
+    // Reset mock profile
+    if (window.mockData && window.mockData.profile) {
+        window.mockData.profile.xp = 0;
+        window.mockData.profile.level = 1;
+        window.mockData.profile.streak = 1;
+        window.mockData.profile.weak_points = [];
+    }
+    
+    refreshProfile();
+    alert("✅ All data has been reset to defaults.");
+}
+
+// ============================================
 // BOOT
 // ============================================
 
