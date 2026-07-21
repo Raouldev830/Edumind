@@ -1,4 +1,5 @@
 // mock-data.js — Complete mock response shapes for all API endpoints
+// Includes mixed question types: MCQ, Structural, and Code
 window.mockData = {
     profile: {
         username: "StudentPro",
@@ -48,6 +49,7 @@ window.mockData = {
         questions: [
             {
                 id: 1,
+                type: "mcq",
                 question: "What mathematical principle does backpropagation rely on to compute gradients through multiple layers?",
                 options: {
                     A: "The Pythagorean theorem",
@@ -60,6 +62,23 @@ window.mockData = {
             },
             {
                 id: 2,
+                type: "structural",
+                question: "Given a simple neural network with one hidden layer, where the input x = 2, weight w₁ = 0.5, bias b₁ = 0.1, and activation function f(z) = z² (for simplicity), calculate the output of the hidden layer. Show your full working.",
+                correct_answer: "Step 1: Compute weighted sum: z = w₁·x + b₁ = 0.5 × 2 + 0.1 = 1.1\nStep 2: Apply activation: f(z) = z² = 1.1² = 1.21\nFinal Answer: Hidden layer output = 1.21",
+                concept_tag: "forward_pass_calculation",
+                hint: "Remember: z = wx + b, then apply activation f(z)"
+            },
+            {
+                id: 3,
+                type: "code",
+                question: "Write a Python function called `compute_mse_loss` that takes two lists `predictions` and `targets` of equal length and returns the Mean Squared Error (MSE) loss.",
+                correct_answer: "def compute_mse_loss(predictions, targets):\n    n = len(predictions)\n    total = sum((p - t) ** 2 for p, t in zip(predictions, targets))\n    return total / n",
+                concept_tag: "loss_function_implementation",
+                hint: "MSE = (1/n) × Σ(predicted - actual)²"
+            },
+            {
+                id: 4,
+                type: "mcq",
                 question: "What problem can occur in deep networks when using sigmoid activation functions during backpropagation?",
                 options: {
                     A: "Exploding memory usage",
@@ -69,30 +88,6 @@ window.mockData = {
                 },
                 correct_answer: "C",
                 concept_tag: "vanishing_gradients"
-            },
-            {
-                id: 3,
-                question: "What does the learning rate parameter control during weight updates?",
-                options: {
-                    A: "The number of training epochs",
-                    B: "The size of each weight adjustment step",
-                    C: "The batch size for data loading",
-                    D: "The number of hidden layers"
-                },
-                correct_answer: "B",
-                concept_tag: "learning_rate"
-            },
-            {
-                id: 4,
-                question: "In backpropagation, what is the purpose of the forward pass?",
-                options: {
-                    A: "To update all network weights simultaneously",
-                    B: "To compute the network's prediction given current weights",
-                    C: "To shuffle the training data randomly",
-                    D: "To prune unnecessary neurons"
-                },
-                correct_answer: "B",
-                concept_tag: "forward_pass"
             }
         ]
     },
@@ -101,7 +96,13 @@ window.mockData = {
         total_questions: 4,
         passed: true,
         weak_points: ["vanishing_gradients"],
-        feedback: "Strong performance overall! You clearly understand the chain rule and forward pass mechanics. However, you confused vanishing gradients with exploding memory — review how sigmoid squashes gradients in deep layers.",
+        feedback: "Strong performance overall! You nailed the chain rule MCQ and the forward pass calculation — your step-by-step working was clear and correct. Your MSE loss function implementation is solid. However, you confused vanishing gradients with exploding memory — review how sigmoid squashes gradients in deep layers.",
+        per_question_feedback: [
+            { id: 1, correct: true, comment: "Correct! The chain rule is the foundation of backpropagation." },
+            { id: 2, correct: true, comment: "Excellent worked solution. Your calculation z = 1.1 and f(z) = 1.21 is correct." },
+            { id: 3, correct: true, comment: "Clean implementation. The use of zip() and generator expression is Pythonic." },
+            { id: 4, correct: false, comment: "Incorrect. Sigmoid's derivative max is 0.25 — multiplying many small numbers causes gradients to vanish, not memory to explode." }
+        ],
         gamification: {
             xp_earned: 75,
             new_total_xp: 220,

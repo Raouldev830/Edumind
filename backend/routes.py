@@ -90,7 +90,11 @@ def generate_quiz(data: QuizRequest):
 
 @router.post("/evaluate")
 def evaluate_quiz(data: EvaluateRequest):
-    """Grade the student's quiz answers and persist weak points."""
+    """Grade the student's quiz answers and persist weak points.
+
+    Supports mixed question types: MCQ (letter matching), structural
+    (AI-graded worked solutions), and code (AI-graded implementations).
+    """
     ai_response = llm_service.evaluate_answers(data.quiz_data, data.user_answers)
     if "error" in ai_response:
         raise HTTPException(status_code=502, detail=ai_response["error"])
@@ -98,7 +102,6 @@ def evaluate_quiz(data: EvaluateRequest):
     # --- Parse score safely as int ---
     raw_score = ai_response.get("score", 0)
     if isinstance(raw_score, str):
-        # Handle formats like "3/4" or just "3"
         try:
             raw_score = int(raw_score.split("/")[0])
         except (ValueError, IndexError):
@@ -108,16 +111,38 @@ def evaluate_quiz(data: EvaluateRequest):
     total = int(ai_response.get("total_questions", len(data.user_answers)))
 
     # --- Build per-question result breakdown ---
+    # Use AI per_question_feedback when available (needed for structural/code grading)
+    ai_per_q = {
+        item["id"]: item
+        for item in ai_response.get("per_question_feedback", [])
+        if isinstance(item, dict) and "id" in item
+    }
+
     results = []
     for q in data.quiz_data:
         qid = str(q.get("id", ""))
+        qid_int = q.get("id", 0)
+        q_type = q.get("type", "mcq")
         user_ans = data.user_answers.get(qid, "")
         correct_ans = q.get("correct_answer", "")
+
+        if q_type == "mcq":
+            # Simple key comparison for MCQ
+            is_correct = user_ans.strip().upper() == correct_ans.strip().upper()
+        else:
+            # For structural/code, rely on AI grader's judgement
+            ai_q = ai_per_q.get(qid_int, {})
+            is_correct = ai_q.get("correct", False)
+
+        comment = ai_per_q.get(qid_int, {}).get("comment", "")
+
         results.append({
-            "question_id": q.get("id", 0),
-            "correct": user_ans == correct_ans,
+            "question_id": qid_int,
+            "correct": is_correct,
             "correct_answer": correct_ans,
             "user_answer": user_ans,
+            "type": q_type,
+            "comment": comment,
         })
 
     # --- Persist weak points from missed concepts ---
@@ -141,6 +166,7 @@ def evaluate_quiz(data: EvaluateRequest):
         "weak_points": weak_points,
         "feedback": ai_response.get("feedback", ""),
         "results": results,
+        "per_question_feedback": ai_response.get("per_question_feedback", []),
         "gamification": game_rewards,
     }
 

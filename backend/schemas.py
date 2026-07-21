@@ -47,9 +47,11 @@ class QuizQuestionOptions(BaseModel):
 class QuizQuestion(BaseModel):
     id: int
     question: str
-    options: Dict[str, str]  # {"A": "...", "B": "...", "C": "...", "D": "..."}
-    correct_answer: str
+    type: str = "mcq"  # "mcq" | "structural" | "code"
+    options: Optional[Dict[str, str]] = None  # Only for MCQ: {"A": "...", ...}
+    correct_answer: str  # Letter key for MCQ, full model answer for structural/code
     concept_tag: str
+    hint: Optional[str] = None  # Optional hint for structural/code questions
 
 
 class QuizResponse(BaseModel):
@@ -62,7 +64,7 @@ class QuizResponse(BaseModel):
 
 class EvaluateRequest(BaseModel):
     quiz_data: List[Dict]  # list of question dicts from the quiz response
-    user_answers: Dict[str, str]  # {"1": "A", "2": "C", ...}
+    user_answers: Dict[str, str]  # {"1": "A", "2": "free text answer", ...}
     topic: str = "General Study"
     username: str = "StudentPro"
 

@@ -259,24 +259,60 @@ async function triggerQuizGeneration() {
             return alert("No quiz questions were generated. Try a different topic.");
         }
 
-        // Render quiz form
+        // Render quiz form with mixed question types
         const form = document.getElementById('quiz-form');
         form.innerHTML = activeQuizPayload.map((q, idx) => {
-            // Handle options as both objects and arrays
-            const entries = Array.isArray(q.options)
-                ? q.options.map((v, i) => [String.fromCharCode(65 + i), v])
-                : Object.entries(q.options);
+            const qType = q.type || 'mcq';
 
-            return `
-                <div class="quiz-question-block">
-                    <p>${idx + 1}. ${q.question}</p>
-                    ${entries.map(([k, v]) => `
-                        <label>
-                            <input type="radio" name="q-${q.id}" value="${k}">
-                            <span>${k}: ${v}</span>
-                        </label>
-                    `).join('')}
-                </div>`;
+            if (qType === 'mcq') {
+                // MCQ: radio buttons
+                const entries = Array.isArray(q.options)
+                    ? q.options.map((v, i) => [String.fromCharCode(65 + i), v])
+                    : Object.entries(q.options || {});
+
+                return `
+                    <div class="quiz-question-block" data-type="mcq">
+                        <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+                            <span class="field-pill" style="background: rgba(37, 99, 235, 0.1); color: var(--primary-blue);">MCQ</span>
+                            <span style="font-size:0.78rem; color:var(--secondary-text);">${q.concept_tag?.replace(/_/g, ' ') || ''}</span>
+                        </div>
+                        <p>${idx + 1}. ${q.question}</p>
+                        ${entries.map(([k, v]) => `
+                            <label>
+                                <input type="radio" name="q-${q.id}" value="${k}">
+                                <span>${k}: ${v}</span>
+                            </label>
+                        `).join('')}
+                    </div>`;
+
+            } else if (qType === 'structural') {
+                // Structural: textarea for worked solutions
+                return `
+                    <div class="quiz-question-block" data-type="structural">
+                        <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+                            <span class="field-pill" style="background: rgba(124, 58, 237, 0.1); color: var(--purple-accent);">📐 Structural</span>
+                            <span style="font-size:0.78rem; color:var(--secondary-text);">${q.concept_tag?.replace(/_/g, ' ') || ''}</span>
+                        </div>
+                        <p>${idx + 1}. ${q.question}</p>
+                        ${q.hint ? `<div style="background: rgba(250, 204, 21, 0.1); border-left: 3px solid #FACC15; padding: 10px 14px; border-radius: 8px; margin: 10px 0; font-size: 0.88rem; color: #854D0E;">💡 <strong>Hint:</strong> ${q.hint}</div>` : ''}
+                        <textarea name="q-${q.id}" class="structural-answer" placeholder="Show your full working here... Write each step clearly." rows="6" style="width:100%; padding:14px; border:1.5px solid var(--border); border-radius:12px; font-family:var(--font-global); font-size:0.94rem; resize:vertical; background:var(--white); color:var(--primary-text); outline:none; transition:var(--transition-smooth);" onfocus="this.style.borderColor='var(--purple-accent)'; this.style.boxShadow='0 0 0 4px rgba(124,58,237,0.12)'" onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='none'"></textarea>
+                    </div>`;
+
+            } else if (qType === 'code') {
+                // Code: code textarea
+                return `
+                    <div class="quiz-question-block" data-type="code">
+                        <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+                            <span class="field-pill" style="background: rgba(34, 197, 94, 0.1); color: var(--success);">💻 Code Challenge</span>
+                            <span style="font-size:0.78rem; color:var(--secondary-text);">${q.concept_tag?.replace(/_/g, ' ') || ''}</span>
+                        </div>
+                        <p>${idx + 1}. ${q.question}</p>
+                        ${q.hint ? `<div style="background: rgba(250, 204, 21, 0.1); border-left: 3px solid #FACC15; padding: 10px 14px; border-radius: 8px; margin: 10px 0; font-size: 0.88rem; color: #854D0E;">💡 <strong>Hint:</strong> ${q.hint}</div>` : ''}
+                        <textarea name="q-${q.id}" class="code-answer" placeholder="Write your code solution here..." rows="8" style="width:100%; padding:14px; border:1.5px solid var(--border); border-radius:12px; font-family:'Courier New', Consolas, monospace; font-size:0.9rem; resize:vertical; background:#1E293B; color:#E2E8F0; outline:none; transition:var(--transition-smooth); tab-size:4;" onfocus="this.style.borderColor='var(--success)'; this.style.boxShadow='0 0 0 4px rgba(34,197,94,0.12)'" onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='none'" onkeydown="if(event.key==='Tab'){event.preventDefault();var s=this.selectionStart;var e=this.selectionEnd;this.value=this.value.substring(0,s)+'    '+this.value.substring(e);this.selectionStart=this.selectionEnd=s+4;}"></textarea>
+                    </div>`;
+            }
+
+            return ''; // fallback
         }).join('');
 
         // Show quiz, hide others
@@ -295,15 +331,26 @@ async function triggerQuizGeneration() {
 async function triggerEvaluation() {
     if (!activeQuizPayload) return alert("No active quiz to evaluate.");
 
-    // Collect user answers
+    // Collect user answers — supports MCQ (radio), structural (textarea), and code (textarea)
     const userAnswers = {};
     let allAnswered = true;
     activeQuizPayload.forEach(q => {
-        const selected = document.querySelector(`input[name="q-${q.id}"]:checked`);
-        if (selected) {
-            userAnswers[String(q.id)] = selected.value;
+        const qType = q.type || 'mcq';
+        if (qType === 'mcq') {
+            const selected = document.querySelector(`input[name="q-${q.id}"]:checked`);
+            if (selected) {
+                userAnswers[String(q.id)] = selected.value;
+            } else {
+                allAnswered = false;
+            }
         } else {
-            allAnswered = false;
+            // structural or code — get textarea value
+            const textarea = document.querySelector(`textarea[name="q-${q.id}"]`);
+            if (textarea && textarea.value.trim()) {
+                userAnswers[String(q.id)] = textarea.value.trim();
+            } else {
+                allAnswered = false;
+            }
         }
     });
 
@@ -359,8 +406,60 @@ async function triggerEvaluation() {
             weakSection.style.display = 'none';
         }
 
+        // Per-question detailed feedback (for structural/code answers)
+        const perQFeedback = evalData.per_question_feedback || [];
+        let detailedHTML = '';
+        if (perQFeedback.length > 0) {
+            detailedHTML = '<div style="margin-top: 20px;"><h4 style="color: var(--primary-blue); font-family: var(--font-heading); margin-bottom: 14px;">📋 Detailed Question-by-Question Feedback</h4>';
+            
+            activeQuizPayload.forEach((q, idx) => {
+                const qType = q.type || 'mcq';
+                const pqf = perQFeedback.find(f => f.id === q.id) || {};
+                const isCorrect = pqf.correct;
+                const comment = pqf.comment || '';
+                const userAns = evalData.results?.find(r => r.question_id === q.id)?.user_answer || '';
+
+                const typeBadge = qType === 'mcq' 
+                    ? '<span class="field-pill" style="background:rgba(37,99,235,0.1); color:var(--primary-blue);">MCQ</span>'
+                    : qType === 'structural'
+                    ? '<span class="field-pill" style="background:rgba(124,58,237,0.1); color:var(--purple-accent);">📐 Structural</span>'
+                    : '<span class="field-pill" style="background:rgba(34,197,94,0.1); color:var(--success);">💻 Code</span>';
+
+                const statusIcon = isCorrect ? '✅' : '❌';
+                const borderColor = isCorrect ? 'var(--success)' : 'var(--danger)';
+
+                detailedHTML += `
+                    <div style="background: var(--background); border-left: 4px solid ${borderColor}; border-radius: 12px; padding: 16px 20px; margin-bottom: 12px; border: 1px solid var(--border); border-left: 4px solid ${borderColor};">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <span style="font-size:1.1rem;">${statusIcon}</span>
+                                <strong style="color: var(--primary-text);">Q${idx + 1}</strong>
+                                ${typeBadge}
+                            </div>
+                            <span style="font-size:0.82rem; color: ${isCorrect ? 'var(--success)' : 'var(--danger)'}; font-weight:700;">${isCorrect ? 'Correct' : 'Incorrect'}</span>
+                        </div>
+                        <p style="font-size:0.92rem; color:var(--primary-text); margin-bottom:8px;"><em>${q.question.substring(0, 120)}${q.question.length > 120 ? '...' : ''}</em></p>
+                        ${comment ? `<p style="font-size:0.88rem; color:var(--secondary-text); line-height:1.5;">${comment}</p>` : ''}
+                        ${(qType !== 'mcq' && !isCorrect) ? `
+                            <details style="margin-top:10px;">
+                                <summary style="cursor:pointer; color:var(--primary-blue); font-weight:700; font-size:0.88rem;">📖 View Model Answer</summary>
+                                <pre style="margin-top:8px; background:#1E293B; color:#E2E8F0; padding:14px; border-radius:10px; font-size:0.85rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5;">${q.correct_answer}</pre>
+                            </details>
+                        ` : ''}
+                        ${(qType !== 'mcq' && userAns) ? `
+                            <details style="margin-top:8px;">
+                                <summary style="cursor:pointer; color:var(--secondary-text); font-weight:600; font-size:0.85rem;">👤 Your Answer</summary>
+                                <pre style="margin-top:8px; background:var(--background); padding:12px; border-radius:10px; border:1px solid var(--border); font-size:0.85rem; overflow-x:auto; white-space:pre-wrap;">${userAns}</pre>
+                            </details>
+                        ` : ''}
+                    </div>`;
+            });
+
+            detailedHTML += '</div>';
+        }
+
         // Feedback
-        document.getElementById('eval-feedback').innerText = evalData.feedback || '';
+        document.getElementById('eval-feedback').innerHTML = evalData.feedback + detailedHTML;
 
         // Show eval results, hide others
         switchActivePanel('eval');
