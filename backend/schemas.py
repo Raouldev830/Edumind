@@ -143,3 +143,34 @@ class ResolveWeakPointRequest(BaseModel):
 
 class ResolveWeakPointResponse(BaseModel):
     resolved: bool = True
+
+
+# ---------------------------------------------------------------------------
+# /flashcards
+# ---------------------------------------------------------------------------
+
+class FlashcardItem(BaseModel):
+    front: str
+    back: str
+
+
+class FlashcardRequest(BaseModel):
+    content: str
+    mode: str = "deep"  # "deep" | "cram"
+
+
+class FlashcardResponse(BaseModel):
+    flashcards: List[FlashcardItem]
+
+
+# ---------------------------------------------------------------------------
+# /analogy
+# ---------------------------------------------------------------------------
+
+class AnalogyRequest(BaseModel):
+    content: str
+    mode: str = "deep"  # "deep" | "cram"
+
+
+class AnalogyResponse(BaseModel):
+    analogy: str

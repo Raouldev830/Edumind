@@ -179,6 +179,37 @@ _REEXPLAIN_SYSTEM = {
     ),
 }
 
+_FLASHCARD_SYSTEM = {
+    "deep": (
+        "You are an expert AI tutor and educational specialist creating high-yield flashcards for deep conceptual understanding.\n"
+        "Return ONLY valid JSON adhering strictly to the following schema:\n"
+        '{"flashcards": [{"front": "concept or analytical question", "back": "full, thorough explanation with intuition and rationale"}]}\n'
+        "Generate exactly 5 to 6 flashcards from the provided content. Every card must test a core concept, principle, or mechanism."
+    ),
+    "cram": (
+        "You are a high-speed exam preparation coach creating rapid-fire recall flashcards for time-pressured studying.\n"
+        "Return ONLY valid JSON adhering strictly to the following schema:\n"
+        '{"flashcards": [{"front": "key term, formula, or fact", "back": "the shortest possible correct answer (1-2 lines maximum, recall-optimized, punchy and direct)"}]}\n'
+        "Generate exactly 5 to 6 flashcards from the provided content. Every card must focus on immediate recognition and memorization."
+    ),
+}
+
+_ANALOGY_SYSTEM = {
+    "deep": (
+        "You are an expert educational strategist who explains complex scientific and mathematical concepts using vivid, relatable analogies.\n"
+        "Return ONLY valid JSON adhering strictly to the following schema:\n"
+        '{"analogy": "..."}\n'
+        "Create ONE strong, cohesive real-world analogy (3 to 5 sentences long) that maps each key part of the concept to something familiar and concrete."
+    ),
+    "cram": (
+        "You are a high-speed exam coach using memorable, concrete real-world analogies to make concepts instantly stick in short-term memory.\n"
+        "Return ONLY valid JSON adhering strictly to the following schema:\n"
+        '{"analogy": "..."}\n'
+        "Create ONE punchy, high-impact real-world analogy (3 to 5 sentences long) mapping the core mechanism to a familiar real-world system."
+    ),
+}
+
+
 
 # ---------------------------------------------------------------------------
 # Public API
@@ -249,6 +280,30 @@ def get_reexplanation(
     return _call_deepseek(system, user)
 
 
+def get_flashcards(content: str, mode: str = "deep") -> dict:
+    """Generate 5-6 front/back flashcard pairs from the study material."""
+    system = _FLASHCARD_SYSTEM.get(mode, _FLASHCARD_SYSTEM["deep"])
+    user = (
+        f"Mode: {mode.upper()}\n"
+        f"Study Material Content:\n{content}\n\n"
+        "Generate 5 to 6 flashcards now adhering exactly to the JSON schema."
+    )
+    return _call_deepseek(system, user)
+
+
+def get_analogy(content: str, mode: str = "deep") -> dict:
+    """Generate ONE strong real-world analogy (3-5 sentences) framing the existing study material."""
+    system = _ANALOGY_SYSTEM.get(mode, _ANALOGY_SYSTEM["deep"])
+    user = (
+        f"Mode: {mode.upper()}\n"
+        f"Study Material Content:\n{content}\n\n"
+        "Generate exactly ONE vivid real-world analogy now adhering strictly to the JSON schema."
+    )
+    return _call_deepseek(system, user)
+
+
 # Aliases for explicit compatibility with generate_quiz and generate_reexplanation naming conventions
 generate_quiz = get_quiz
 generate_reexplanation = get_reexplanation
+generate_flashcards = get_flashcards
+generate_analogy = get_analogy

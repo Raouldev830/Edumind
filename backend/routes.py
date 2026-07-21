@@ -20,6 +20,10 @@ from schemas import (
     EvaluateRequest,
     ReexplainRequest,
     ResolveWeakPointRequest,
+    FlashcardRequest,
+    FlashcardResponse,
+    AnalogyRequest,
+    AnalogyResponse,
 )
 
 router = APIRouter()
@@ -178,6 +182,30 @@ def reexplain_topic(data: ReexplainRequest):
         topic=data.topic,
         original_explanation=data.original_explanation,
         weak_points=data.weak_points,
+        mode=data.mode,
+    )
+    if "error" in ai_response:
+        raise HTTPException(status_code=502, detail=ai_response["error"])
+    return ai_response
+
+
+@router.post("/flashcards", response_model=FlashcardResponse)
+def generate_flashcards_route(data: FlashcardRequest):
+    """Generate flip-style flashcards from explained content."""
+    ai_response = llm_service.generate_flashcards(
+        content=data.content,
+        mode=data.mode,
+    )
+    if "error" in ai_response:
+        raise HTTPException(status_code=502, detail=ai_response["error"])
+    return ai_response
+
+
+@router.post("/analogy", response_model=AnalogyResponse)
+def generate_analogy_route(data: AnalogyRequest):
+    """Generate ONE real-world analogy from explained content."""
+    ai_response = llm_service.generate_analogy(
+        content=data.content,
         mode=data.mode,
     )
     if "error" in ai_response:

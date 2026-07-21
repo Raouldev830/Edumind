@@ -233,6 +233,10 @@ async function triggerExplanationFromText(textInput, customTitle = null) {
             if (takeawaysSection) takeawaysSection.style.display = 'none';
         }
 
+        // Hide previous analogy lens if open
+        const analogySection = document.getElementById('analogy-section');
+        if (analogySection) analogySection.style.display = 'none';
+
         // Show explanation, hide others
         switchActivePanel('explanation');
 
@@ -567,12 +571,139 @@ function triggerRetestAfterReexplain() {
 }
 
 // ============================================
+// FLASHCARDS GENERATION
+// ============================================
+
+async function triggerFlashcardsGeneration() {
+    if (!currentExtractedText) {
+        return alert("Please generate an explanation for a topic first before creating flashcards.");
+    }
+
+    switchActivePanel('flashcards');
+    const gridEl = document.getElementById('flashcards-grid');
+    const badgeEl = document.getElementById('flashcards-mode-badge');
+    if (badgeEl) badgeEl.innerText = `✨ ${currentMode.toUpperCase()} Mode Cards`;
+    if (gridEl) {
+        gridEl.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--secondary-text);">
+            <div style="font-size: 2rem; margin-bottom: 10px;">⏳</div>
+            <p style="font-weight: 600;">Generating ${currentMode.toUpperCase()} mode flashcards...</p>
+        </div>`;
+    }
+
+    try {
+        let cardsData = null;
+        if (isMockMode()) {
+            await new Promise(r => setTimeout(r, 600));
+            cardsData = window.mockData.flashcards;
+        } else {
+            const res = await fetch(`${API_BASE}/flashcards`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    content: currentExtractedText,
+                    mode: currentMode
+                })
+            });
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.detail || `Server error (${res.status})`);
+            }
+            cardsData = await res.json();
+        }
+
+        const cards = cardsData?.flashcards || [];
+        if (gridEl) {
+            if (cards.length === 0) {
+                gridEl.innerHTML = `<p style="color: var(--secondary-text); text-align: center;">No flashcards generated.</p>`;
+                return;
+            }
+            gridEl.innerHTML = cards.map((card, idx) => `
+                <div class="flashcard-item" onclick="this.classList.toggle('flipped')">
+                    <div class="flashcard-front">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 0.75rem; font-weight: 700; color: var(--primary-blue); text-transform: uppercase;">Card ${idx + 1} • Front (${currentMode === 'cram' ? 'Term / Fact' : 'Concept / Question'})</span>
+                            <span style="font-size: 0.75rem; color: var(--secondary-text);">👆 Tap to Flip</span>
+                        </div>
+                        <p style="font-size: 1.1rem; font-weight: 700; color: var(--primary-text); line-height: 1.5;">${card.front}</p>
+                    </div>
+                    <div class="flashcard-back">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 0.75rem; font-weight: 700; color: var(--purple-accent); text-transform: uppercase;">Card ${idx + 1} • Back (${currentMode === 'cram' ? 'Quick Recall' : 'Detailed Explanation'})</span>
+                            <span style="font-size: 0.75rem; color: var(--secondary-text);">👆 Tap to Flip</span>
+                        </div>
+                        <p style="font-size: 1.05rem; color: var(--primary-text); line-height: 1.6;">${card.back}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+    } catch (e) {
+        console.error("Flashcards generation error:", e);
+        if (gridEl) {
+            gridEl.innerHTML = `<div style="text-align: center; padding: 30px; color: var(--danger);">
+                <p style="font-weight: 700;">Failed to generate flashcards: ${e.message}</p>
+            </div>`;
+        }
+    }
+}
+
+// ============================================
+// ANALOGY GENERATION
+// ============================================
+
+async function triggerAnalogyGeneration() {
+    if (!currentExtractedText) {
+        return alert("Please generate an explanation for a topic first before creating an analogy.");
+    }
+
+    const analogySection = document.getElementById('analogy-section');
+    const analogyBox = document.getElementById('analogy-box');
+    if (analogySection) analogySection.style.display = 'block';
+    if (analogyBox) analogyBox.innerHTML = '<span class="loading-spinner"></span> Generating real-world analogy...';
+
+    try {
+        let analogyText = "";
+        if (isMockMode()) {
+            await new Promise(r => setTimeout(r, 500));
+            analogyText = window.mockData?.analogy?.analogy || "Imagine backpropagation as tuning the instruments in a grand orchestra...";
+        } else {
+            const res = await fetch(`${API_BASE}/analogy`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    content: currentExtractedText,
+                    mode: currentMode
+                })
+            });
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.detail || `Server error (${res.status})`);
+            }
+            const data = await res.json();
+            analogyText = data.analogy || "";
+        }
+
+        if (analogyBox) {
+            renderRichText('analogy-box', analogyText);
+        }
+    } catch (e) {
+        console.error("Analogy generation error:", e);
+        if (analogyBox) {
+            analogyBox.innerHTML = `<span style="color: var(--danger);">Failed to generate analogy: ${e.message}</span>`;
+        }
+    }
+}
+
+// ============================================
 // RESET
 // ============================================
 
 function resetForNewTopic() {
-    // Hide all panels
+    // Hide all panels and sections
     switchActivePanel('none');
+    const analogySection = document.getElementById('analogy-section');
+    if (analogySection) analogySection.style.display = 'none';
 
     // Clear state
     document.getElementById('topic-input').value = '';
@@ -589,10 +720,12 @@ function switchActivePanel(panelName) {
     const emptyState = document.getElementById('practice-empty-state');
     const expCard = document.getElementById('explanation-card');
     const quizCard = document.getElementById('quiz-card');
+    const flashcardsCard = document.getElementById('flashcards-card');
 
     if (emptyState) emptyState.style.display = (panelName === 'none') ? 'block' : 'none';
     if (expCard) expCard.style.display = (panelName === 'explanation') ? 'block' : 'none';
     if (quizCard) quizCard.style.display = (panelName === 'quiz') ? 'block' : 'none';
+    if (flashcardsCard) flashcardsCard.style.display = (panelName === 'flashcards') ? 'block' : 'none';
 
     if (panelName === 'eval') showPanel('eval-results-card'); else hidePanel('eval-results-card');
     if (panelName === 'reexplain') showPanel('reexplain-card'); else hidePanel('reexplain-card');

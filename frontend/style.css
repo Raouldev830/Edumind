@@ -2311,3 +2311,35 @@ input:checked + .slider::before {
     color: var(--secondary-text);
     margin-top: 2px;
 }
+
+/* ==========================================================================
+   FLASHCARDS STYLING
+   ========================================================================== */
+.flashcard-item {
+    background: var(--card-background);
+    border: 1.5px solid var(--border);
+    border-radius: var(--curve-radius-sm);
+    padding: 22px;
+    cursor: pointer;
+    box-shadow: var(--shadow-soft);
+    transition: var(--transition-smooth);
+    position: relative;
+}
+.flashcard-item:hover {
+    border-color: var(--primary-blue);
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
+}
+.flashcard-item .flashcard-back {
+    display: none;
+}
+.flashcard-item.flipped .flashcard-front {
+    display: none;
+}
+.flashcard-item.flipped .flashcard-back {
+    display: block;
+}
+.flashcard-item.flipped {
+    border-color: var(--purple-accent);
+    background: rgba(124, 58, 237, 0.03);
+}

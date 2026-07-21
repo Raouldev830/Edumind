@@ -715,6 +715,13 @@
                             </div>
                             <h3 id="explanation-title" style="font-family: var(--font-heading); font-size: 1.45rem; font-weight: 800; margin-bottom: 14px; color: var(--primary-text);"></h3>
                             <p class="explanation-text-black" id="explanation-box"></p>
+                            <div id="analogy-section" class="analogy-lens-card" style="display: none; margin: 20px 0; padding: 18px 22px; background: rgba(37, 99, 235, 0.05); border: 1.5px solid var(--primary-blue); border-radius: var(--curve-radius-sm);">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                                    <span style="font-weight: 800; font-size: 0.95rem; color: var(--primary-blue); display: flex; align-items: center; gap: 6px;">💡 Supplementary Lens: Real-World Analogy</span>
+                                    <span style="font-size: 0.75rem; font-weight: 700; color: var(--secondary-text); background: var(--card-background); padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border);">Mental Anchor</span>
+                                </div>
+                                <p id="analogy-box" style="font-size: 1.03rem; color: var(--primary-text); line-height: 1.65; margin: 0;"></p>
+                            </div>
                             <div class="key-takeaways" id="key-takeaways-section" style="display: none;">
                                 <h4>🔑 Key Takeaways & Core Axioms</h4>
                                 <ul id="key-takeaways-list"></ul>
@@ -755,6 +762,16 @@
                             <div class="reassurance-text" id="reexplain-reassurance"></div>
                             <button class="action-trigger-btn primary-intent" style="margin-top:20px;" onclick="triggerQuizGeneration()">📝 Test Me On This Concept Now</button>
                         </div>
+
+                        <!-- Panel 5: Flashcards Card -->
+                        <div id="flashcards-card" style="display: none; margin-bottom: 24px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                                <h4 class="synthesis-title-blue">🃏 High-Yield Study Flashcards</h4>
+                                <span class="task-percentage-badge" id="flashcards-mode-badge">✨ Deep Mode Cards</span>
+                            </div>
+                            <div id="flashcards-grid" style="display: flex; flex-direction: column; gap: 16px;"></div>
+                            <button class="action-trigger-btn" style="margin-top:20px;" onclick="switchActivePanel('explanation')">⬅ Back to Explanation</button>
+                        </div>
                     </main>
 
                     <!-- Right Panel: Quick Prompts & Study Tools -->
@@ -767,9 +784,9 @@
                         <div class="quick-prompt-chips">
                             <button class="prompt-chip-btn" onclick="document.getElementById('topic-input').value = 'Explain simpler like I am a beginner: ' + (currentTopic || 'Quantum Mechanics'); triggerExplanation();">👶 Explain Simpler</button>
                             <button class="prompt-chip-btn" onclick="triggerQuizGeneration()">📝 Generate Quiz</button>
-                            <button class="prompt-chip-btn" onclick="document.getElementById('topic-input').value = 'Generate 5 high-yield flashcards for: ' + (currentTopic || 'Applied Physics'); triggerExplanation();">🃏 Generate Flashcards</button>
+                            <button class="prompt-chip-btn" onclick="triggerFlashcardsGeneration()">🃏 Generate Flashcards</button>
                             <button class="prompt-chip-btn" onclick="document.getElementById('topic-input').value = 'Provide 3 real-world engineering examples of: ' + (currentTopic || 'Neural Attention'); triggerExplanation();">🏗️ Real-World Examples</button>
-                            <button class="prompt-chip-btn" onclick="document.getElementById('topic-input').value = 'Give a vivid analogy to easily remember: ' + (currentTopic || 'System Architecture'); triggerExplanation();">💡 Real-World Analogy</button>
+                            <button class="prompt-chip-btn" onclick="triggerAnalogyGeneration()">💡 Real-World Analogy</button>
                             <button class="prompt-chip-btn" onclick="document.getElementById('topic-input').value = 'Write clean Python code highlighting: ' + (currentTopic || 'Transformer Attention'); triggerExplanation();">💻 Code Simulation</button>
                         </div>
 

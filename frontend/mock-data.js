@@ -115,5 +115,17 @@ window.mockData = {
         title: "Vanishing Gradients — A Different Angle",
         re_explanation: "Think of it like a game of telephone. In a deep network, the gradient signal has to travel backward through many layers. Each layer multiplies it by the derivative of its activation function.\n\nWith sigmoid: the derivative is always between 0 and 0.25. Multiply a number by 0.25 ten times in a row and it becomes incredibly tiny — effectively zero.\n\nThat's the vanishing gradient problem: by the time the error signal reaches the early layers, it's so small that those layers barely learn anything.\n\nSolution: Use ReLU (derivative is either 0 or 1) or residual connections (skip connections that let the gradient flow directly).",
         reassurance: "This is one of the trickiest concepts in deep learning — the fact that you got the other 3 right shows you understand the fundamentals. This one piece will click with practice! 🎯"
+    },
+    flashcards: {
+        flashcards: [
+            { front: "What is the core purpose of Backpropagation?", back: "To compute the gradient of the loss function with respect to each weight using the chain rule of calculus." },
+            { front: "Forward Pass vs. Backward Pass", back: "Forward pass computes inputs -> outputs and prediction. Backward pass decomposes error and propagates gradients from output -> inputs." },
+            { front: "Why does the Vanishing Gradient problem occur with Sigmoid?", back: "Because the derivative of sigmoid is <= 0.25. Multiplying many numbers < 1 across deep layers causes gradients to approach zero." },
+            { front: "How does Learning Rate affect gradient descent?", back: "Too large causes overshooting and divergence; too small causes extremely slow convergence to local minima." },
+            { front: "What is the primary benefit of ReLU over Sigmoid?", back: "Its derivative for positive inputs is exactly 1, preventing the gradient from diminishing during backpropagation across deep layers." }
+        ]
+    },
+    analogy: {
+        analogy: "Imagine backpropagation as tuning the instruments in a grand orchestra after a poor rehearsal. The conductor (loss function) listens to the final sound (prediction) and detects exactly how off-key the harmony is. By tracing the discordant notes backward from the front violins all the way to the percussion section in the rear using precise acoustics (chain rule), the conductor gives tailored instructions to every musician on how much to tighten or loosen their strings (weight adjustments). The learning rate is how gently or aggressively each musician turns their tuning pegs before playing the symphony again."
     }
 };
