@@ -31,7 +31,7 @@ def _call_gemini(system_prompt: str, user_prompt: str) -> dict:
     for attempt in range(2):
         try:
             response = client.chat.completions.create(
-                model="gemini-1.5-flash",
+                model="gemini-2.5-flash",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
