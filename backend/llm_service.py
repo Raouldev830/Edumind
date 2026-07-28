@@ -1,7 +1,7 @@
 """
 MindLoop LLM service layer.
 
-All DeepSeek API interactions live here.  Every public function accepts a
+All Gemini API interactions live here.  Every public function accepts a
 ``mode`` parameter ("deep" or "cram") that switches the system prompt
 personality between thorough professor and rapid-fire exam coach.
 """
@@ -17,21 +17,21 @@ env_path = os.path.join(current_dir, ".env")
 load_dotenv(dotenv_path=env_path)
 
 client = OpenAI(
-    api_key=os.getenv("DEEPSEEK_API_KEY"),
-    base_url="https://api.deepseek.com",
+    api_key=os.getenv("GEMINI_API_KEY"),
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
 )
 
 
 # ---------------------------------------------------------------------------
-# Internal helper — single-retry wrapper around the DeepSeek chat endpoint
+# Internal helper — single-retry wrapper around the Gemini chat endpoint
 # ---------------------------------------------------------------------------
 
-def _call_deepseek(system_prompt: str, user_prompt: str) -> dict:
-    """Send a prompt pair to DeepSeek and return parsed JSON. Retries with cleanup."""
+def _call_gemini(system_prompt: str, user_prompt: str) -> dict:
+    """Send a prompt pair to Gemini and return parsed JSON. Retries with cleanup."""
     for attempt in range(2):
         try:
             response = client.chat.completions.create(
-                model="deepseek-v4-flash",
+                model="gemini-1.5-flash",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
@@ -226,7 +226,7 @@ def get_explanation(topic: str, mode: str = "deep", weak_points: list | None = N
             f"{', '.join(weak_points)}. Pay extra attention to those areas."
         )
 
-    return _call_deepseek(system, user)
+    return _call_gemini(system, user)
 
 
 def get_quiz(context_text: str, mode: str = "deep", num_questions: int = 4) -> dict:
@@ -247,7 +247,7 @@ def get_quiz(context_text: str, mode: str = "deep", num_questions: int = 4) -> d
         user += "4. For any MCQ questions, generate distractors (wrong options) that mirror REAL common mistakes students make on this topic, not just plausible-sounding filler — these should be the specific wrong answers students actually pick, so the loop trains pattern recognition against real exam traps.\n\n"
     
     user += f"Study Material:\n\n{context_text}"
-    return _call_deepseek(system, user)
+    return _call_gemini(system, user)
 
 
 def evaluate_answers(quiz_data: list, user_answers: dict) -> dict:
@@ -256,7 +256,7 @@ def evaluate_answers(quiz_data: list, user_answers: dict) -> dict:
         f"Original Quiz Data: {json.dumps(quiz_data)}\n\n"
         f"User Answers Submitted: {json.dumps(user_answers)}"
     )
-    return _call_deepseek(_EVALUATE_SYSTEM, user)
+    return _call_gemini(_EVALUATE_SYSTEM, user)
 
 
 def get_reexplanation(
@@ -277,7 +277,7 @@ def get_reexplanation(
         user += "\nBefore re-explaining, infer what INCORRECT mental model likely produced that specific wrong answer (why THIS wrong answer was chosen, what flawed logic leads there). Then directly name and correct that specific misconception."
     elif mode == "cram":
         user += "\nDo NOT attempt to diagnose or fix a misconception. Return a short, sharper restatement or a compact mnemonic that's easier to hold in short-term memory than the original. The goal is repetition and recognition, not deep correction — keep it to 1-2 tight sentences or a memorable phrase."
-    return _call_deepseek(system, user)
+    return _call_gemini(system, user)
 
 
 def get_flashcards(content: str, mode: str = "deep") -> dict:
@@ -288,7 +288,7 @@ def get_flashcards(content: str, mode: str = "deep") -> dict:
         f"Study Material Content:\n{content}\n\n"
         "Generate 5 to 6 flashcards now adhering exactly to the JSON schema."
     )
-    return _call_deepseek(system, user)
+    return _call_gemini(system, user)
 
 
 def get_analogy(content: str, mode: str = "deep") -> dict:
@@ -299,7 +299,7 @@ def get_analogy(content: str, mode: str = "deep") -> dict:
         f"Study Material Content:\n{content}\n\n"
         "Generate exactly ONE vivid real-world analogy now adhering strictly to the JSON schema."
     )
-    return _call_deepseek(system, user)
+    return _call_gemini(system, user)
 
 
 # Aliases for explicit compatibility with generate_quiz and generate_reexplanation naming conventions
